@@ -1,0 +1,1052 @@
+GAS LISTING /tmp/cc511rLS.s 			page 1
+
+
+   1              		.file	"KernelThread.cpp"
+   2              		.option pic
+   3              		.option norelax
+   4              		.text
+   5              	.Ltext0:
+   6              		.align	2
+   7              		.globl	_ZNK12KernelThread10isFinishedEv
+   9              	_ZNK12KernelThread10isFinishedEv:
+  10              	.LFB28:
+  11              		.file 1 "src/KernelThread.cpp"
+   1:src/KernelThread.cpp **** 
+   2:src/KernelThread.cpp **** #include "../h/KernelThread.hpp"
+   3:src/KernelThread.cpp **** #include "../h/Scheduler.hpp"
+   4:src/KernelThread.cpp **** #include "../h/RISCV.hpp"
+   5:src/KernelThread.cpp **** 
+   6:src/KernelThread.cpp **** KernelThread *KernelThread::running = nullptr;
+   7:src/KernelThread.cpp **** uint64 KernelThread::timeSliceCounter = 0;
+   8:src/KernelThread.cpp **** 
+   9:src/KernelThread.cpp **** KernelThread *KernelThread::createThread(Body body, void *argument) {
+  10:src/KernelThread.cpp ****     return new KernelThread(body, argument);
+  11:src/KernelThread.cpp **** }
+  12:src/KernelThread.cpp **** 
+  13:src/KernelThread.cpp **** bool KernelThread::isFinished() const {
+  12              		.loc 1 13 39
+  13              		.cfi_startproc
+  14              	.LVL0:
+  15 0000 130101FF 		addi	sp,sp,-16
+  16              		.cfi_def_cfa_offset 16
+  17 0004 23348100 		sd	s0,8(sp)
+  18              		.cfi_offset 8, -8
+  19 0008 13040101 		addi	s0,sp,16
+  20              		.cfi_def_cfa 8, 0
+  14:src/KernelThread.cpp ****     return finished;
+  21              		.loc 1 14 5
+  15:src/KernelThread.cpp **** }
+  22              		.loc 1 15 1 is_stmt 0
+  23 000c 03458502 		lbu	a0,40(a0)
+  24              	.LVL1:
+  25 0010 03348100 		ld	s0,8(sp)
+  26              		.cfi_restore 8
+  27              		.cfi_def_cfa 2, 16
+  28 0014 13010101 		addi	sp,sp,16
+  29              		.cfi_def_cfa_offset 0
+  30 0018 67800000 		jr	ra
+  31              		.cfi_endproc
+  32              	.LFE28:
+  34              		.align	2
+  35              		.globl	_ZN12KernelThread11setFinishedEb
+  37              	_ZN12KernelThread11setFinishedEb:
+  38              	.LFB29:
+  16:src/KernelThread.cpp **** 
+  17:src/KernelThread.cpp **** void KernelThread::setFinished(bool finished) {
+  39              		.loc 1 17 47 is_stmt 1
+  40              		.cfi_startproc
+  41              	.LVL2:
+  42 001c 130101FF 		addi	sp,sp,-16
+  43              		.cfi_def_cfa_offset 16
+GAS LISTING /tmp/cc511rLS.s 			page 2
+
+
+  44 0020 23348100 		sd	s0,8(sp)
+  45              		.cfi_offset 8, -8
+  46 0024 13040101 		addi	s0,sp,16
+  47              		.cfi_def_cfa 8, 0
+  18:src/KernelThread.cpp ****     KernelThread::finished = finished;
+  48              		.loc 1 18 5
+  49              		.loc 1 18 28 is_stmt 0
+  50 0028 2304B502 		sb	a1,40(a0)
+  19:src/KernelThread.cpp **** }
+  51              		.loc 1 19 1
+  52 002c 03348100 		ld	s0,8(sp)
+  53              		.cfi_restore 8
+  54              		.cfi_def_cfa 2, 16
+  55 0030 13010101 		addi	sp,sp,16
+  56              		.cfi_def_cfa_offset 0
+  57 0034 67800000 		jr	ra
+  58              		.cfi_endproc
+  59              	.LFE29:
+  61              		.align	2
+  62              		.globl	_ZN12KernelThread5yieldEv
+  64              	_ZN12KernelThread5yieldEv:
+  65              	.LFB30:
+  20:src/KernelThread.cpp **** 
+  21:src/KernelThread.cpp **** #include "../h/syscall_c.hpp"
+  22:src/KernelThread.cpp **** void KernelThread::yield() {
+  66              		.loc 1 22 28 is_stmt 1
+  67              		.cfi_startproc
+  68 0038 130101FF 		addi	sp,sp,-16
+  69              		.cfi_def_cfa_offset 16
+  70 003c 23341100 		sd	ra,8(sp)
+  71 0040 23308100 		sd	s0,0(sp)
+  72              		.cfi_offset 1, -8
+  73              		.cfi_offset 8, -16
+  74 0044 13040101 		addi	s0,sp,16
+  75              		.cfi_def_cfa 8, 0
+  23:src/KernelThread.cpp ****     thread_dispatch();
+  76              		.loc 1 23 5
+  77              		.loc 1 23 20 is_stmt 0
+  78 0048 97000000 		call	_Z15thread_dispatchv@plt
+  78      E7800000 
+  79              	.LVL3:
+  24:src/KernelThread.cpp **** }
+  80              		.loc 1 24 1
+  81 0050 83308100 		ld	ra,8(sp)
+  82              		.cfi_restore 1
+  83 0054 03340100 		ld	s0,0(sp)
+  84              		.cfi_restore 8
+  85              		.cfi_def_cfa 2, 16
+  86 0058 13010101 		addi	sp,sp,16
+  87              		.cfi_def_cfa_offset 0
+  88 005c 67800000 		jr	ra
+  89              		.cfi_endproc
+  90              	.LFE30:
+  92              		.align	2
+  93              		.globl	_ZN12KernelThread7wrapperEv
+  95              	_ZN12KernelThread7wrapperEv:
+  96              	.LFB32:
+GAS LISTING /tmp/cc511rLS.s 			page 3
+
+
+  25:src/KernelThread.cpp **** 
+  26:src/KernelThread.cpp **** void KernelThread::dispatch() {
+  27:src/KernelThread.cpp ****     KernelThread *old = running;
+  28:src/KernelThread.cpp ****     if (!old->isFinished()) {
+  29:src/KernelThread.cpp ****         Scheduler::put(old);
+  30:src/KernelThread.cpp ****     }
+  31:src/KernelThread.cpp ****     running = Scheduler::get();
+  32:src/KernelThread.cpp ****     running->timeSliceCounter = 0;
+  33:src/KernelThread.cpp ****     contextSwitch(&old->context, &running->context);
+  34:src/KernelThread.cpp **** }
+  35:src/KernelThread.cpp **** 
+  36:src/KernelThread.cpp **** void KernelThread::wrapper() {
+  97              		.loc 1 36 30 is_stmt 1
+  98              		.cfi_startproc
+  99 0060 130101FE 		addi	sp,sp,-32
+ 100              		.cfi_def_cfa_offset 32
+ 101 0064 233C1100 		sd	ra,24(sp)
+ 102 0068 23388100 		sd	s0,16(sp)
+ 103 006c 23349100 		sd	s1,8(sp)
+ 104              		.cfi_offset 1, -8
+ 105              		.cfi_offset 8, -16
+ 106              		.cfi_offset 9, -24
+ 107 0070 13040102 		addi	s0,sp,32
+ 108              		.cfi_def_cfa 8, 0
+  37:src/KernelThread.cpp ****     RISCV::popSppSpie();
+ 109              		.loc 1 37 5
+ 110              		.loc 1 37 22 is_stmt 0
+ 111 0074 97000000 		call	_ZN5RISCV10popSppSpieEv@plt
+ 111      E7800000 
+ 112              	.LVL4:
+  38:src/KernelThread.cpp ****     running->body(running->argument);
+ 113              		.loc 1 38 5 is_stmt 1
+ 114              		.loc 1 38 14 is_stmt 0
+ 115 007c 97040000 		lla	s1,.LANCHOR0
+ 115      93840400 
+ 116 0084 83B70400 		ld	a5,0(s1)
+ 117 0088 03B70700 		ld	a4,0(a5)
+ 118              		.loc 1 38 18
+ 119 008c 03B58700 		ld	a0,8(a5)
+ 120 0090 E7000700 		jalr	a4
+ 121              	.LVL5:
+  39:src/KernelThread.cpp ****     running->finished = true;
+ 122              		.loc 1 39 5 is_stmt 1
+ 123              		.loc 1 39 14 is_stmt 0
+ 124 0094 83B70400 		ld	a5,0(s1)
+ 125              		.loc 1 39 23
+ 126 0098 13071000 		li	a4,1
+ 127 009c 2384E702 		sb	a4,40(a5)
+  40:src/KernelThread.cpp ****     KernelThread::yield();
+ 128              		.loc 1 40 5 is_stmt 1
+ 129              		.loc 1 40 24 is_stmt 0
+ 130 00a0 97000000 		call	_ZN12KernelThread5yieldEv
+ 130      E7800000 
+ 131              	.LVL6:
+  41:src/KernelThread.cpp **** }
+ 132              		.loc 1 41 1
+ 133 00a8 83308101 		ld	ra,24(sp)
+GAS LISTING /tmp/cc511rLS.s 			page 4
+
+
+ 134              		.cfi_restore 1
+ 135 00ac 03340101 		ld	s0,16(sp)
+ 136              		.cfi_restore 8
+ 137              		.cfi_def_cfa 2, 32
+ 138 00b0 83348100 		ld	s1,8(sp)
+ 139              		.cfi_restore 9
+ 140 00b4 13010102 		addi	sp,sp,32
+ 141              		.cfi_def_cfa_offset 0
+ 142 00b8 67800000 		jr	ra
+ 143              		.cfi_endproc
+ 144              	.LFE32:
+ 146              		.align	2
+ 147              		.globl	_ZN12KernelThread8dispatchEv
+ 149              	_ZN12KernelThread8dispatchEv:
+ 150              	.LFB31:
+  26:src/KernelThread.cpp ****     KernelThread *old = running;
+ 151              		.loc 1 26 31 is_stmt 1
+ 152              		.cfi_startproc
+ 153 00bc 130101FE 		addi	sp,sp,-32
+ 154              		.cfi_def_cfa_offset 32
+ 155 00c0 233C1100 		sd	ra,24(sp)
+ 156 00c4 23388100 		sd	s0,16(sp)
+ 157 00c8 23349100 		sd	s1,8(sp)
+ 158              		.cfi_offset 1, -8
+ 159              		.cfi_offset 8, -16
+ 160              		.cfi_offset 9, -24
+ 161 00cc 13040102 		addi	s0,sp,32
+ 162              		.cfi_def_cfa 8, 0
+  27:src/KernelThread.cpp ****     if (!old->isFinished()) {
+ 163              		.loc 1 27 5
+  27:src/KernelThread.cpp ****     if (!old->isFinished()) {
+ 164              		.loc 1 27 19 is_stmt 0
+ 165 00d0 97040000 		ld	s1,.LANCHOR0
+ 165      83B40400 
+ 166              	.LVL7:
+  28:src/KernelThread.cpp ****         Scheduler::put(old);
+ 167              		.loc 1 28 5 is_stmt 1
+  28:src/KernelThread.cpp ****         Scheduler::put(old);
+ 168              		.loc 1 28 25 is_stmt 0
+ 169 00d8 13850400 		mv	a0,s1
+ 170 00dc 97000000 		call	_ZNK12KernelThread10isFinishedEv
+ 170      E7800000 
+ 171              	.LVL8:
+  28:src/KernelThread.cpp ****         Scheduler::put(old);
+ 172              		.loc 1 28 5
+ 173 00e4 63000504 		beqz	a0,.L12
+ 174              	.L10:
+  31:src/KernelThread.cpp ****     running->timeSliceCounter = 0;
+ 175              		.loc 1 31 5 is_stmt 1
+  31:src/KernelThread.cpp ****     running->timeSliceCounter = 0;
+ 176              		.loc 1 31 29 is_stmt 0
+ 177 00e8 97000000 		call	_ZN9Scheduler3getEv@plt
+ 177      E7800000 
+ 178              	.LVL9:
+  31:src/KernelThread.cpp ****     running->timeSliceCounter = 0;
+ 179              		.loc 1 31 13
+ 180 00f0 97070000 		lla	a5,.LANCHOR0
+GAS LISTING /tmp/cc511rLS.s 			page 5
+
+
+ 180      93870700 
+ 181 00f8 23B0A700 		sd	a0,0(a5)
+  32:src/KernelThread.cpp ****     contextSwitch(&old->context, &running->context);
+ 182              		.loc 1 32 5 is_stmt 1
+  32:src/KernelThread.cpp ****     contextSwitch(&old->context, &running->context);
+ 183              		.loc 1 32 31 is_stmt 0
+ 184 00fc 23B40700 		sd	zero,8(a5)
+  33:src/KernelThread.cpp **** }
+ 185              		.loc 1 33 5 is_stmt 1
+  33:src/KernelThread.cpp **** }
+ 186              		.loc 1 33 18 is_stmt 0
+ 187 0100 93058501 		addi	a1,a0,24
+ 188 0104 13858401 		addi	a0,s1,24
+ 189 0108 97000000 		call	_ZN12KernelThread13contextSwitchEPNS_7ContextES1_@plt
+ 189      E7800000 
+ 190              	.LVL10:
+  34:src/KernelThread.cpp **** 
+ 191              		.loc 1 34 1
+ 192 0110 83308101 		ld	ra,24(sp)
+ 193              		.cfi_remember_state
+ 194              		.cfi_restore 1
+ 195 0114 03340101 		ld	s0,16(sp)
+ 196              		.cfi_restore 8
+ 197              		.cfi_def_cfa 2, 32
+ 198 0118 83348100 		ld	s1,8(sp)
+ 199              		.cfi_restore 9
+ 200              	.LVL11:
+ 201 011c 13010102 		addi	sp,sp,32
+ 202              		.cfi_def_cfa_offset 0
+ 203 0120 67800000 		jr	ra
+ 204              	.LVL12:
+ 205              	.L12:
+ 206              		.cfi_restore_state
+  29:src/KernelThread.cpp ****     }
+ 207              		.loc 1 29 9 is_stmt 1
+  29:src/KernelThread.cpp ****     }
+ 208              		.loc 1 29 23 is_stmt 0
+ 209 0124 13850400 		mv	a0,s1
+ 210 0128 97000000 		call	_ZN9Scheduler3putEP12KernelThread@plt
+ 210      E7800000 
+ 211              	.LVL13:
+ 212 0130 6FF09FFB 		j	.L10
+ 213              		.cfi_endproc
+ 214              	.LFE31:
+ 216              		.align	2
+ 217              		.globl	_ZN12KernelThreadD2Ev
+ 219              	_ZN12KernelThreadD2Ev:
+ 220              	.LFB34:
+  42:src/KernelThread.cpp **** 
+  43:src/KernelThread.cpp **** KernelThread::~KernelThread() {
+ 221              		.loc 1 43 1 is_stmt 1
+ 222              		.cfi_startproc
+ 223              		.cfi_personality 0x9b,DW.ref.__gxx_personality_v0
+ 224              		.cfi_lsda 0x1b,.LLSDA34
+ 225              	.LVL14:
+ 226 0134 130101FF 		addi	sp,sp,-16
+ 227              		.cfi_def_cfa_offset 16
+GAS LISTING /tmp/cc511rLS.s 			page 6
+
+
+ 228 0138 23341100 		sd	ra,8(sp)
+ 229 013c 23308100 		sd	s0,0(sp)
+ 230              		.cfi_offset 1, -8
+ 231              		.cfi_offset 8, -16
+ 232 0140 13040101 		addi	s0,sp,16
+ 233              		.cfi_def_cfa 8, 0
+ 234              	.LBB2:
+  44:src/KernelThread.cpp ****     kfree(stack);
+ 235              		.loc 1 44 5
+ 236              		.loc 1 44 10 is_stmt 0
+ 237 0144 03350501 		ld	a0,16(a0)
+ 238              	.LVL15:
+ 239 0148 97000000 		call	_Z5kfreePv@plt
+ 239      E7800000 
+ 240              	.LVL16:
+ 241              	.LBE2:
+  45:src/KernelThread.cpp **** }
+ 242              		.loc 1 45 1
+ 243 0150 83308100 		ld	ra,8(sp)
+ 244              		.cfi_restore 1
+ 245 0154 03340100 		ld	s0,0(sp)
+ 246              		.cfi_restore 8
+ 247              		.cfi_def_cfa 2, 16
+ 248 0158 13010101 		addi	sp,sp,16
+ 249              		.cfi_def_cfa_offset 0
+ 250 015c 67800000 		jr	ra
+ 251              		.cfi_endproc
+ 252              	.LFE34:
+ 253              		.globl	__gxx_personality_v0
+ 254              		.section	.gcc_except_table,"a",@progbits
+ 255              	.LLSDA34:
+ 256 0000 FF       		.byte	0xff
+ 257 0001 FF       		.byte	0xff
+ 258 0002 03       		.byte	0x3
+ 259 0003 00       		.byte	0
+ 260              		.text
+ 262              		.globl	_ZN12KernelThreadD1Ev
+ 263              		.set	_ZN12KernelThreadD1Ev,_ZN12KernelThreadD2Ev
+ 264              		.align	2
+ 265              		.globl	_ZNK12KernelThread18getInterruptResultEv
+ 267              	_ZNK12KernelThread18getInterruptResultEv:
+ 268              	.LFB36:
+  46:src/KernelThread.cpp **** 
+  47:src/KernelThread.cpp **** uint64 KernelThread::getInterruptResult() const {
+ 269              		.loc 1 47 49 is_stmt 1
+ 270              		.cfi_startproc
+ 271              	.LVL17:
+ 272 0160 130101FF 		addi	sp,sp,-16
+ 273              		.cfi_def_cfa_offset 16
+ 274 0164 23348100 		sd	s0,8(sp)
+ 275              		.cfi_offset 8, -8
+ 276 0168 13040101 		addi	s0,sp,16
+ 277              		.cfi_def_cfa 8, 0
+  48:src/KernelThread.cpp ****     return interruptResult;
+ 278              		.loc 1 48 5
+  49:src/KernelThread.cpp **** }
+ 279              		.loc 1 49 1 is_stmt 0
+GAS LISTING /tmp/cc511rLS.s 			page 7
+
+
+ 280 016c 03358503 		ld	a0,56(a0)
+ 281              	.LVL18:
+ 282 0170 03348100 		ld	s0,8(sp)
+ 283              		.cfi_restore 8
+ 284              		.cfi_def_cfa 2, 16
+ 285 0174 13010101 		addi	sp,sp,16
+ 286              		.cfi_def_cfa_offset 0
+ 287 0178 67800000 		jr	ra
+ 288              		.cfi_endproc
+ 289              	.LFE36:
+ 291              		.align	2
+ 292              		.globl	_ZN12KernelThreadC2EPFvPvES0_
+ 294              	_ZN12KernelThreadC2EPFvPvES0_:
+ 295              	.LFB38:
+  50:src/KernelThread.cpp **** 
+  51:src/KernelThread.cpp **** KernelThread::KernelThread(Body body, void *argument)
+ 296              		.loc 1 51 1 is_stmt 1
+ 297              		.cfi_startproc
+ 298              	.LVL19:
+ 299 017c 130101FE 		addi	sp,sp,-32
+ 300              		.cfi_def_cfa_offset 32
+ 301 0180 233C1100 		sd	ra,24(sp)
+ 302 0184 23388100 		sd	s0,16(sp)
+ 303 0188 23349100 		sd	s1,8(sp)
+ 304 018c 23302101 		sd	s2,0(sp)
+ 305              		.cfi_offset 1, -8
+ 306              		.cfi_offset 8, -16
+ 307              		.cfi_offset 9, -24
+ 308              		.cfi_offset 18, -32
+ 309 0190 13040102 		addi	s0,sp,32
+ 310              		.cfi_def_cfa 8, 0
+ 311 0194 93040500 		mv	s1,a0
+ 312 0198 13890500 		mv	s2,a1
+ 313              	.LBB3:
+  52:src/KernelThread.cpp ****     : body(body), argument(argument),
+  53:src/KernelThread.cpp ****       stack(body ? (uint64 *) kmalloc(DEFAULT_STACK_SIZE * sizeof(uint64)) : nullptr),
+  54:src/KernelThread.cpp ****       context({(uint64) &wrapper, stack ? (uint64)&stack[DEFAULT_STACK_SIZE] : 0}),
+  55:src/KernelThread.cpp ****       finished(false) {
+ 314              		.loc 1 55 21 is_stmt 0
+ 315 019c 2330B500 		sd	a1,0(a0)
+ 316 01a0 2334C500 		sd	a2,8(a0)
+  53:src/KernelThread.cpp ****       context({(uint64) &wrapper, stack ? (uint64)&stack[DEFAULT_STACK_SIZE] : 0}),
+ 317              		.loc 1 53 18
+ 318 01a4 638E0504 		beqz	a1,.L21
+  53:src/KernelThread.cpp ****       context({(uint64) &wrapper, stack ? (uint64)&stack[DEFAULT_STACK_SIZE] : 0}),
+ 319              		.loc 1 53 38 discriminator 1
+ 320 01a8 37850000 		li	a0,32768
+ 321              	.LVL20:
+ 322 01ac 97000000 		call	_Z7kmallocm@plt
+ 322      E7800000 
+ 323              	.LVL21:
+ 324              	.L18:
+ 325              		.loc 1 55 21
+ 326 01b4 23B8A400 		sd	a0,16(s1)
+ 327 01b8 97070000 		lla	a5,_ZN12KernelThread7wrapperEv
+ 327      93870700 
+ 328 01c0 23BCF400 		sd	a5,24(s1)
+GAS LISTING /tmp/cc511rLS.s 			page 8
+
+
+  54:src/KernelThread.cpp ****       finished(false) {
+ 329              		.loc 1 54 41
+ 330 01c4 63020504 		beqz	a0,.L22
+  54:src/KernelThread.cpp ****       finished(false) {
+ 331              		.loc 1 54 51 discriminator 1
+ 332 01c8 B7870000 		li	a5,32768
+ 333 01cc 3305F500 		add	a0,a0,a5
+ 334              	.L19:
+ 335              		.loc 1 55 21
+ 336 01d0 23B0A402 		sd	a0,32(s1)
+ 337 01d4 23840402 		sb	zero,40(s1)
+  56:src/KernelThread.cpp ****     if (body) {
+ 338              		.loc 1 56 5 is_stmt 1
+ 339 01d8 63080900 		beqz	s2,.L17
+  57:src/KernelThread.cpp ****         Scheduler::put(this);
+ 340              		.loc 1 57 9
+ 341              		.loc 1 57 23 is_stmt 0
+ 342 01dc 13850400 		mv	a0,s1
+ 343 01e0 97000000 		call	_ZN9Scheduler3putEP12KernelThread@plt
+ 343      E7800000 
+ 344              	.LVL22:
+ 345              	.L17:
+ 346              	.LBE3:
+  58:src/KernelThread.cpp ****     }
+  59:src/KernelThread.cpp **** }...
+ 347              		.loc 1 59 1
+ 348 01e8 83308101 		ld	ra,24(sp)
+ 349              		.cfi_remember_state
+ 350              		.cfi_restore 1
+ 351 01ec 03340101 		ld	s0,16(sp)
+ 352              		.cfi_restore 8
+ 353              		.cfi_def_cfa 2, 32
+ 354 01f0 83348100 		ld	s1,8(sp)
+ 355              		.cfi_restore 9
+ 356              	.LVL23:
+ 357 01f4 03390100 		ld	s2,0(sp)
+ 358              		.cfi_restore 18
+ 359              	.LVL24:
+ 360 01f8 13010102 		addi	sp,sp,32
+ 361              		.cfi_def_cfa_offset 0
+ 362 01fc 67800000 		jr	ra
+ 363              	.LVL25:
+ 364              	.L21:
+ 365              		.cfi_restore_state
+ 366              	.LBB4:
+  53:src/KernelThread.cpp ****       stack(body ? (uint64 *) kmalloc(DEFAULT_STACK_SIZE * sizeof(uint64)) : nullptr),
+ 367              		.loc 1 53 18
+ 368 0200 13050000 		li	a0,0
+ 369 0204 6FF01FFB 		j	.L18
+ 370              	.LVL26:
+ 371              	.L22:
+  54:src/KernelThread.cpp ****       context({(uint64) &wrapper, stack ? (uint64)&stack[DEFAULT_STACK_SIZE] : 0}),
+ 372              		.loc 1 54 41
+ 373 0208 13050000 		li	a0,0
+ 374 020c 6FF05FFC 		j	.L19
+ 375              	.LBE4:
+ 376              		.cfi_endproc
+GAS LISTING /tmp/cc511rLS.s 			page 9
+
+
+ 377              	.LFE38:
+ 379              		.globl	_ZN12KernelThreadC1EPFvPvES0_
+ 380              		.set	_ZN12KernelThreadC1EPFvPvES0_,_ZN12KernelThreadC2EPFvPvES0_
+ 381              		.align	2
+ 382              		.globl	_ZN12KernelThread12createThreadEPFvPvES0_
+ 384              	_ZN12KernelThread12createThreadEPFvPvES0_:
+ 385              	.LFB27:
+   9:src/KernelThread.cpp **** KernelThread *KernelThread::createThread(Body body, void *argument) {
+ 386              		.loc 1 9 69 is_stmt 1
+ 387              		.cfi_startproc
+ 388              		.cfi_personality 0x9b,DW.ref.__gxx_personality_v0
+ 389              		.cfi_lsda 0x1b,.LLSDA27
+ 390              	.LVL27:
+ 391 0210 130101FD 		addi	sp,sp,-48
+ 392              		.cfi_def_cfa_offset 48
+ 393 0214 23341102 		sd	ra,40(sp)
+ 394 0218 23308102 		sd	s0,32(sp)
+ 395 021c 233C9100 		sd	s1,24(sp)
+ 396 0220 23382101 		sd	s2,16(sp)
+ 397 0224 23343101 		sd	s3,8(sp)
+ 398              		.cfi_offset 1, -8
+ 399              		.cfi_offset 8, -16
+ 400              		.cfi_offset 9, -24
+ 401              		.cfi_offset 18, -32
+ 402              		.cfi_offset 19, -40
+ 403 0228 13040103 		addi	s0,sp,48
+ 404              		.cfi_def_cfa 8, 0
+ 405 022c 13090500 		mv	s2,a0
+ 406 0230 93890500 		mv	s3,a1
+  10:src/KernelThread.cpp ****     return new KernelThread(body, argument);
+ 407              		.loc 1 10 5
+  10:src/KernelThread.cpp ****     return new KernelThread(body, argument);
+ 408              		.loc 1 10 43 is_stmt 0
+ 409 0234 13050004 		li	a0,64
+ 410              	.LVL28:
+ 411              	.LEHB0:
+ 412 0238 97000000 		call	_ZN11KernelClassnwEm@plt
+ 412      E7800000 
+ 413              	.LVL29:
+ 414              	.LEHE0:
+ 415 0240 93040500 		mv	s1,a0
+ 416 0244 13860900 		mv	a2,s3
+ 417 0248 93050900 		mv	a1,s2
+ 418              	.LEHB1:
+ 419 024c 97000000 		call	_ZN12KernelThreadC1EPFvPvES0_
+ 419      E7800000 
+ 420              	.LVL30:
+ 421              	.LEHE1:
+ 422 0254 6F000002 		j	.L29
+ 423              	.L26:
+ 424 0258 13090500 		mv	s2,a0
+ 425              	.LVL31:
+ 426 025c 13850400 		mv	a0,s1
+ 427 0260 97000000 		call	_ZN11KernelClassdlEPv@plt
+ 427      E7800000 
+ 428              	.LVL32:
+ 429 0268 13050900 		mv	a0,s2
+GAS LISTING /tmp/cc511rLS.s 			page 10
+
+
+ 430              	.LEHB2:
+ 431 026c 97000000 		call	_Unwind_Resume@plt
+ 431      E7800000 
+ 432              	.LVL33:
+ 433              	.LEHE2:
+ 434              	.L29:
+  11:src/KernelThread.cpp **** }
+ 435              		.loc 1 11 1
+ 436 0274 13850400 		mv	a0,s1
+ 437 0278 83308102 		ld	ra,40(sp)
+ 438              		.cfi_restore 1
+ 439 027c 03340102 		ld	s0,32(sp)
+ 440              		.cfi_restore 8
+ 441              		.cfi_def_cfa 2, 48
+ 442 0280 83348101 		ld	s1,24(sp)
+ 443              		.cfi_restore 9
+ 444 0284 03390101 		ld	s2,16(sp)
+ 445              		.cfi_restore 18
+ 446              	.LVL34:
+ 447 0288 83398100 		ld	s3,8(sp)
+ 448              		.cfi_restore 19
+ 449              	.LVL35:
+ 450 028c 13010103 		addi	sp,sp,48
+ 451              		.cfi_def_cfa_offset 0
+ 452 0290 67800000 		jr	ra
+ 453              		.cfi_endproc
+ 454              	.LFE27:
+ 455              		.section	.gcc_except_table
+ 456              	.LLSDA27:
+ 457 0004 FF       		.byte	0xff
+ 458 0005 FF       		.byte	0xff
+ 459 0006 03       		.byte	0x3
+ 460 0007 27       		.byte	0x27
+ 461 0008 00000000 		.4byte	.LEHB0-.LFB27
+ 462 000c 00000000 		.4byte	.LEHE0-.LEHB0
+ 463 0010 00000000 		.4byte	0
+ 464 0014 00       		.byte	0
+ 465 0015 00000000 		.4byte	.LEHB1-.LFB27
+ 466 0019 00000000 		.4byte	.LEHE1-.LEHB1
+ 467 001d 00000000 		.4byte	.L26-.LFB27
+ 468 0021 00       		.byte	0
+ 469 0022 00000000 		.4byte	.LEHB2-.LFB27
+ 470 0026 00000000 		.4byte	.LEHE2-.LEHB2
+ 471 002a 00000000 		.4byte	0
+ 472 002e 00       		.byte	0
+ 473              		.text
+ 475              		.globl	_ZN12KernelThread16timeSliceCounterE
+ 476              		.globl	_ZN12KernelThread7runningE
+ 477              		.bss
+ 478              		.align	3
+ 479              		.set	.LANCHOR0,. + 0
+ 482              	_ZN12KernelThread7runningE:
+ 483 0000 00000000 		.zero	8
+ 483      00000000 
+ 486              	_ZN12KernelThread16timeSliceCounterE:
+ 487 0008 00000000 		.zero	8
+ 487      00000000 
+GAS LISTING /tmp/cc511rLS.s 			page 11
+
+
+ 488              		.text
+ 489              	.Letext0:
+ 490              		.file 2 "src/../h/../lib/hw.h"
+ 491              		.file 3 "src/../h/../h/KernelClass.hpp"
+ 492              		.file 4 "src/../h/KernelThread.hpp"
+ 493              		.file 5 "src/../h/Scheduler.hpp"
+ 494              		.file 6 "src/../h/RISCV.hpp"
+ 495              		.file 7 "src/../h/syscall_c.hpp"
+ 2961              		.align	3
+ 2964              	DW.ref.__gxx_personality_v0:
+ 2965 0000 00000000 		.dword	__gxx_personality_v0
+ 2965      00000000 
+ 2966              		.ident	"GCC: (Ubuntu 9.4.0-1ubuntu1~20.04) 9.4.0"
+ 2967              		.section	.note.GNU-stack,"",@progbits
+GAS LISTING /tmp/cc511rLS.s 			page 12
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 KernelThread.cpp
+     /tmp/cc511rLS.s:9      .text:0000000000000000 _ZNK12KernelThread10isFinishedEv
+     /tmp/cc511rLS.s:13     .text:0000000000000000 .L0 
+     /tmp/cc511rLS.s:15     .text:0000000000000000 .L0 
+     /tmp/cc511rLS.s:16     .text:0000000000000004 .L0 
+     /tmp/cc511rLS.s:18     .text:0000000000000008 .L0 
+     /tmp/cc511rLS.s:20     .text:000000000000000c .L0 
+     /tmp/cc511rLS.s:22     .text:000000000000000c .L0 
+     /tmp/cc511rLS.s:23     .text:000000000000000c .L0 
+     /tmp/cc511rLS.s:26     .text:0000000000000014 .L0 
+     /tmp/cc511rLS.s:27     .text:0000000000000014 .L0 
+     /tmp/cc511rLS.s:29     .text:0000000000000018 .L0 
+     /tmp/cc511rLS.s:31     .text:000000000000001c .L0 
+     /tmp/cc511rLS.s:37     .text:000000000000001c _ZN12KernelThread11setFinishedEb
+     /tmp/cc511rLS.s:40     .text:000000000000001c .L0 
+     /tmp/cc511rLS.s:42     .text:000000000000001c .L0 
+     /tmp/cc511rLS.s:43     .text:0000000000000020 .L0 
+     /tmp/cc511rLS.s:45     .text:0000000000000024 .L0 
+     /tmp/cc511rLS.s:47     .text:0000000000000028 .L0 
+     /tmp/cc511rLS.s:49     .text:0000000000000028 .L0 
+     /tmp/cc511rLS.s:50     .text:0000000000000028 .L0 
+     /tmp/cc511rLS.s:52     .text:000000000000002c .L0 
+     /tmp/cc511rLS.s:53     .text:0000000000000030 .L0 
+     /tmp/cc511rLS.s:54     .text:0000000000000030 .L0 
+     /tmp/cc511rLS.s:56     .text:0000000000000034 .L0 
+     /tmp/cc511rLS.s:58     .text:0000000000000038 .L0 
+     /tmp/cc511rLS.s:64     .text:0000000000000038 _ZN12KernelThread5yieldEv
+     /tmp/cc511rLS.s:67     .text:0000000000000038 .L0 
+     /tmp/cc511rLS.s:68     .text:0000000000000038 .L0 
+     /tmp/cc511rLS.s:69     .text:000000000000003c .L0 
+     /tmp/cc511rLS.s:72     .text:0000000000000044 .L0 
+     /tmp/cc511rLS.s:73     .text:0000000000000044 .L0 
+     /tmp/cc511rLS.s:75     .text:0000000000000048 .L0 
+     /tmp/cc511rLS.s:77     .text:0000000000000048 .L0 
+     /tmp/cc511rLS.s:78     .text:0000000000000048 .L0 
+     /tmp/cc511rLS.s:81     .text:0000000000000050 .L0 
+     /tmp/cc511rLS.s:82     .text:0000000000000054 .L0 
+     /tmp/cc511rLS.s:84     .text:0000000000000058 .L0 
+     /tmp/cc511rLS.s:85     .text:0000000000000058 .L0 
+     /tmp/cc511rLS.s:87     .text:000000000000005c .L0 
+     /tmp/cc511rLS.s:89     .text:0000000000000060 .L0 
+     /tmp/cc511rLS.s:95     .text:0000000000000060 _ZN12KernelThread7wrapperEv
+     /tmp/cc511rLS.s:98     .text:0000000000000060 .L0 
+     /tmp/cc511rLS.s:99     .text:0000000000000060 .L0 
+     /tmp/cc511rLS.s:100    .text:0000000000000064 .L0 
+     /tmp/cc511rLS.s:104    .text:0000000000000070 .L0 
+     /tmp/cc511rLS.s:105    .text:0000000000000070 .L0 
+     /tmp/cc511rLS.s:106    .text:0000000000000070 .L0 
+     /tmp/cc511rLS.s:108    .text:0000000000000074 .L0 
+     /tmp/cc511rLS.s:110    .text:0000000000000074 .L0 
+     /tmp/cc511rLS.s:111    .text:0000000000000074 .L0 
+     /tmp/cc511rLS.s:114    .text:000000000000007c .L0 
+     /tmp/cc511rLS.s:115    .text:000000000000007c .L0 
+     /tmp/cc511rLS.s:119    .text:000000000000008c .L0 
+     /tmp/cc511rLS.s:123    .text:0000000000000094 .L0 
+     /tmp/cc511rLS.s:124    .text:0000000000000094 .L0 
+GAS LISTING /tmp/cc511rLS.s 			page 13
+
+
+     /tmp/cc511rLS.s:126    .text:0000000000000098 .L0 
+     /tmp/cc511rLS.s:129    .text:00000000000000a0 .L0 
+     /tmp/cc511rLS.s:130    .text:00000000000000a0 .L0 
+     /tmp/cc511rLS.s:133    .text:00000000000000a8 .L0 
+     /tmp/cc511rLS.s:134    .text:00000000000000ac .L0 
+     /tmp/cc511rLS.s:136    .text:00000000000000b0 .L0 
+     /tmp/cc511rLS.s:137    .text:00000000000000b0 .L0 
+     /tmp/cc511rLS.s:139    .text:00000000000000b4 .L0 
+     /tmp/cc511rLS.s:141    .text:00000000000000b8 .L0 
+     /tmp/cc511rLS.s:143    .text:00000000000000bc .L0 
+     /tmp/cc511rLS.s:149    .text:00000000000000bc _ZN12KernelThread8dispatchEv
+     /tmp/cc511rLS.s:152    .text:00000000000000bc .L0 
+     /tmp/cc511rLS.s:153    .text:00000000000000bc .L0 
+     /tmp/cc511rLS.s:154    .text:00000000000000c0 .L0 
+     /tmp/cc511rLS.s:158    .text:00000000000000cc .L0 
+     /tmp/cc511rLS.s:159    .text:00000000000000cc .L0 
+     /tmp/cc511rLS.s:160    .text:00000000000000cc .L0 
+     /tmp/cc511rLS.s:162    .text:00000000000000d0 .L0 
+     /tmp/cc511rLS.s:164    .text:00000000000000d0 .L0 
+     /tmp/cc511rLS.s:165    .text:00000000000000d0 .L0 
+     /tmp/cc511rLS.s:168    .text:00000000000000d8 .L0 
+     /tmp/cc511rLS.s:169    .text:00000000000000d8 .L0 
+     /tmp/cc511rLS.s:173    .text:00000000000000e4 .L0 
+     /tmp/cc511rLS.s:176    .text:00000000000000e8 .L0 
+     /tmp/cc511rLS.s:177    .text:00000000000000e8 .L0 
+     /tmp/cc511rLS.s:180    .text:00000000000000f0 .L0 
+     /tmp/cc511rLS.s:183    .text:00000000000000fc .L0 
+     /tmp/cc511rLS.s:184    .text:00000000000000fc .L0 
+     /tmp/cc511rLS.s:186    .text:0000000000000100 .L0 
+     /tmp/cc511rLS.s:187    .text:0000000000000100 .L0 
+     /tmp/cc511rLS.s:192    .text:0000000000000110 .L0 
+     /tmp/cc511rLS.s:193    .text:0000000000000114 .L0 
+     /tmp/cc511rLS.s:194    .text:0000000000000114 .L0 
+     /tmp/cc511rLS.s:196    .text:0000000000000118 .L0 
+     /tmp/cc511rLS.s:197    .text:0000000000000118 .L0 
+     /tmp/cc511rLS.s:199    .text:000000000000011c .L0 
+     /tmp/cc511rLS.s:202    .text:0000000000000120 .L0 
+     /tmp/cc511rLS.s:206    .text:0000000000000124 .L0 
+     /tmp/cc511rLS.s:208    .text:0000000000000124 .L0 
+     /tmp/cc511rLS.s:209    .text:0000000000000124 .L0 
+     /tmp/cc511rLS.s:213    .text:0000000000000134 .L0 
+     /tmp/cc511rLS.s:219    .text:0000000000000134 _ZN12KernelThreadD2Ev
+     /tmp/cc511rLS.s:222    .text:0000000000000134 .L0 
+     /tmp/cc511rLS.s:2964   .data.rel.local.DW.ref.__gxx_personality_v0:0000000000000000 DW.ref.__gxx_personality_v0
+     /tmp/cc511rLS.s:226    .text:0000000000000134 .L0 
+     /tmp/cc511rLS.s:227    .text:0000000000000138 .L0 
+     /tmp/cc511rLS.s:230    .text:0000000000000140 .L0 
+     /tmp/cc511rLS.s:231    .text:0000000000000140 .L0 
+     /tmp/cc511rLS.s:233    .text:0000000000000144 .L0 
+     /tmp/cc511rLS.s:236    .text:0000000000000144 .L0 
+     /tmp/cc511rLS.s:237    .text:0000000000000144 .L0 
+     /tmp/cc511rLS.s:243    .text:0000000000000150 .L0 
+     /tmp/cc511rLS.s:244    .text:0000000000000154 .L0 
+     /tmp/cc511rLS.s:246    .text:0000000000000158 .L0 
+     /tmp/cc511rLS.s:247    .text:0000000000000158 .L0 
+     /tmp/cc511rLS.s:249    .text:000000000000015c .L0 
+     /tmp/cc511rLS.s:251    .text:0000000000000160 .L0 
+GAS LISTING /tmp/cc511rLS.s 			page 14
+
+
+     /tmp/cc511rLS.s:219    .text:0000000000000134 _ZN12KernelThreadD1Ev
+     /tmp/cc511rLS.s:267    .text:0000000000000160 _ZNK12KernelThread18getInterruptResultEv
+     /tmp/cc511rLS.s:270    .text:0000000000000160 .L0 
+     /tmp/cc511rLS.s:272    .text:0000000000000160 .L0 
+     /tmp/cc511rLS.s:273    .text:0000000000000164 .L0 
+     /tmp/cc511rLS.s:275    .text:0000000000000168 .L0 
+     /tmp/cc511rLS.s:277    .text:000000000000016c .L0 
+     /tmp/cc511rLS.s:279    .text:000000000000016c .L0 
+     /tmp/cc511rLS.s:280    .text:000000000000016c .L0 
+     /tmp/cc511rLS.s:283    .text:0000000000000174 .L0 
+     /tmp/cc511rLS.s:284    .text:0000000000000174 .L0 
+     /tmp/cc511rLS.s:286    .text:0000000000000178 .L0 
+     /tmp/cc511rLS.s:288    .text:000000000000017c .L0 
+     /tmp/cc511rLS.s:294    .text:000000000000017c _ZN12KernelThreadC2EPFvPvES0_
+     /tmp/cc511rLS.s:297    .text:000000000000017c .L0 
+     /tmp/cc511rLS.s:299    .text:000000000000017c .L0 
+     /tmp/cc511rLS.s:300    .text:0000000000000180 .L0 
+     /tmp/cc511rLS.s:305    .text:0000000000000190 .L0 
+     /tmp/cc511rLS.s:306    .text:0000000000000190 .L0 
+     /tmp/cc511rLS.s:307    .text:0000000000000190 .L0 
+     /tmp/cc511rLS.s:308    .text:0000000000000190 .L0 
+     /tmp/cc511rLS.s:310    .text:0000000000000194 .L0 
+     /tmp/cc511rLS.s:315    .text:000000000000019c .L0 
+     /tmp/cc511rLS.s:318    .text:00000000000001a4 .L0 
+     /tmp/cc511rLS.s:320    .text:00000000000001a8 .L0 
+     /tmp/cc511rLS.s:326    .text:00000000000001b4 .L0 
+     /tmp/cc511rLS.s:330    .text:00000000000001c4 .L0 
+     /tmp/cc511rLS.s:332    .text:00000000000001c8 .L0 
+     /tmp/cc511rLS.s:336    .text:00000000000001d0 .L0 
+     /tmp/cc511rLS.s:339    .text:00000000000001d8 .L0 
+     /tmp/cc511rLS.s:341    .text:00000000000001dc .L0 
+     /tmp/cc511rLS.s:342    .text:00000000000001dc .L0 
+     /tmp/cc511rLS.s:348    .text:00000000000001e8 .L0 
+     /tmp/cc511rLS.s:349    .text:00000000000001ec .L0 
+     /tmp/cc511rLS.s:350    .text:00000000000001ec .L0 
+     /tmp/cc511rLS.s:352    .text:00000000000001f0 .L0 
+     /tmp/cc511rLS.s:353    .text:00000000000001f0 .L0 
+     /tmp/cc511rLS.s:355    .text:00000000000001f4 .L0 
+     /tmp/cc511rLS.s:358    .text:00000000000001f8 .L0 
+     /tmp/cc511rLS.s:361    .text:00000000000001fc .L0 
+     /tmp/cc511rLS.s:365    .text:0000000000000200 .L0 
+     /tmp/cc511rLS.s:368    .text:0000000000000200 .L0 
+     /tmp/cc511rLS.s:373    .text:0000000000000208 .L0 
+     /tmp/cc511rLS.s:376    .text:0000000000000210 .L0 
+     /tmp/cc511rLS.s:294    .text:000000000000017c _ZN12KernelThreadC1EPFvPvES0_
+     /tmp/cc511rLS.s:384    .text:0000000000000210 _ZN12KernelThread12createThreadEPFvPvES0_
+     /tmp/cc511rLS.s:387    .text:0000000000000210 .L0 
+     /tmp/cc511rLS.s:391    .text:0000000000000210 .L0 
+     /tmp/cc511rLS.s:392    .text:0000000000000214 .L0 
+     /tmp/cc511rLS.s:398    .text:0000000000000228 .L0 
+     /tmp/cc511rLS.s:399    .text:0000000000000228 .L0 
+     /tmp/cc511rLS.s:400    .text:0000000000000228 .L0 
+     /tmp/cc511rLS.s:401    .text:0000000000000228 .L0 
+     /tmp/cc511rLS.s:402    .text:0000000000000228 .L0 
+     /tmp/cc511rLS.s:404    .text:000000000000022c .L0 
+     /tmp/cc511rLS.s:408    .text:0000000000000234 .L0 
+     /tmp/cc511rLS.s:409    .text:0000000000000234 .L0 
+GAS LISTING /tmp/cc511rLS.s 			page 15
+
+
+     /tmp/cc511rLS.s:436    .text:0000000000000274 .L0 
+     /tmp/cc511rLS.s:438    .text:000000000000027c .L0 
+     /tmp/cc511rLS.s:440    .text:0000000000000280 .L0 
+     /tmp/cc511rLS.s:441    .text:0000000000000280 .L0 
+     /tmp/cc511rLS.s:443    .text:0000000000000284 .L0 
+     /tmp/cc511rLS.s:445    .text:0000000000000288 .L0 
+     /tmp/cc511rLS.s:448    .text:000000000000028c .L0 
+     /tmp/cc511rLS.s:451    .text:0000000000000290 .L0 
+     /tmp/cc511rLS.s:453    .text:0000000000000294 .L0 
+     /tmp/cc511rLS.s:486    .bss:0000000000000008 _ZN12KernelThread16timeSliceCounterE
+     /tmp/cc511rLS.s:482    .bss:0000000000000000 _ZN12KernelThread7runningE
+     /tmp/cc511rLS.s:479    .bss:0000000000000000 .LANCHOR0
+     /tmp/cc511rLS.s:496    .text:0000000000000294 .L0 
+     /tmp/cc511rLS.s:115    .text:000000000000007c .L0 
+     /tmp/cc511rLS.s:165    .text:00000000000000d0 .L0 
+     /tmp/cc511rLS.s:180    .text:00000000000000f0 .L0 
+     /tmp/cc511rLS.s:327    .text:00000000000001b8 .L0 
+     /tmp/cc511rLS.s:205    .text:0000000000000124 .L12
+     /tmp/cc511rLS.s:174    .text:00000000000000e8 .L10
+     /tmp/cc511rLS.s:364    .text:0000000000000200 .L21
+     /tmp/cc511rLS.s:371    .text:0000000000000208 .L22
+     /tmp/cc511rLS.s:345    .text:00000000000001e8 .L17
+     /tmp/cc511rLS.s:324    .text:00000000000001b4 .L18
+     /tmp/cc511rLS.s:334    .text:00000000000001d0 .L19
+     /tmp/cc511rLS.s:434    .text:0000000000000274 .L29
+     /tmp/cc511rLS.s:411    .text:0000000000000238 .LEHB0
+     /tmp/cc511rLS.s:385    .text:0000000000000210 .LFB27
+     /tmp/cc511rLS.s:414    .text:0000000000000240 .LEHE0
+     /tmp/cc511rLS.s:418    .text:000000000000024c .LEHB1
+     /tmp/cc511rLS.s:421    .text:0000000000000254 .LEHE1
+     /tmp/cc511rLS.s:423    .text:0000000000000258 .L26
+     /tmp/cc511rLS.s:430    .text:000000000000026c .LEHB2
+     /tmp/cc511rLS.s:433    .text:0000000000000274 .LEHE2
+     /tmp/cc511rLS.s:1554   .debug_abbrev:0000000000000000 .Ldebug_abbrev0
+     /tmp/cc511rLS.s:2910   .debug_str:00000000000006f0 .LASF119
+     /tmp/cc511rLS.s:2766   .debug_str:0000000000000279 .LASF120
+     /tmp/cc511rLS.s:2750   .debug_str:00000000000001e3 .LASF121
+     /tmp/cc511rLS.s:5      .text:0000000000000000 .Ltext0
+     /tmp/cc511rLS.s:489    .text:0000000000000294 .Letext0
+     /tmp/cc511rLS.s:2702   .debug_line:0000000000000000 .Ldebug_line0
+     /tmp/cc511rLS.s:2830   .debug_str:000000000000046a .LASF0
+     /tmp/cc511rLS.s:2848   .debug_str:0000000000000508 .LASF1
+     /tmp/cc511rLS.s:2812   .debug_str:00000000000003da .LASF2
+     /tmp/cc511rLS.s:2788   .debug_str:0000000000000322 .LASF4
+     /tmp/cc511rLS.s:2892   .debug_str:000000000000064e .LASF3
+     /tmp/cc511rLS.s:2718   .debug_str:000000000000008c .LASF5
+     /tmp/cc511rLS.s:2850   .debug_str:000000000000051b .LASF6
+     /tmp/cc511rLS.s:2828   .debug_str:0000000000000457 .LASF7
+     /tmp/cc511rLS.s:2926   .debug_str:0000000000000822 .LASF8
+     /tmp/cc511rLS.s:2774   .debug_str:00000000000002cd .LASF9
+     /tmp/cc511rLS.s:2866   .debug_str:0000000000000577 .LASF10
+     /tmp/cc511rLS.s:2912   .debug_str:00000000000007b4 .LASF11
+     /tmp/cc511rLS.s:2720   .debug_str:0000000000000093 .LASF12
+     /tmp/cc511rLS.s:2704   .debug_str:0000000000000000 .LASF13
+     /tmp/cc511rLS.s:2732   .debug_str:000000000000011c .LASF14
+     /tmp/cc511rLS.s:2886   .debug_str:000000000000061a .LASF15
+     /tmp/cc511rLS.s:2740   .debug_str:0000000000000158 .LASF16
+GAS LISTING /tmp/cc511rLS.s 			page 16
+
+
+     /tmp/cc511rLS.s:2916   .debug_str:00000000000007cd .LASF22
+     /tmp/cc511rLS.s:2938   .debug_str:0000000000000876 .LASF17
+     /tmp/cc511rLS.s:2752   .debug_str:0000000000000202 .LASF19
+     /tmp/cc511rLS.s:2770   .debug_str:00000000000002ac .LASF18
+     /tmp/cc511rLS.s:2906   .debug_str:00000000000006c5 .LASF20
+     /tmp/cc511rLS.s:2898   .debug_str:0000000000000680 .LASF48
+     /tmp/cc511rLS.s:2832   .debug_str:0000000000000477 .LASF49
+     /tmp/cc511rLS.s:2902   .debug_str:00000000000006a8 .LASF40
+     /tmp/cc511rLS.s:2878   .debug_str:00000000000005cb .LASF42
+     /tmp/cc511rLS.s:2762   .debug_str:0000000000000264 .LASF21
+     /tmp/cc511rLS.s:2874   .debug_str:00000000000005a0 .LASF23
+     /tmp/cc511rLS.s:2710   .debug_str:0000000000000037 .LASF122
+     /tmp/cc511rLS.s:2796   .debug_str:000000000000033f .LASF24
+     /tmp/cc511rLS.s:2728   .debug_str:00000000000000e4 .LASF25
+     /tmp/cc511rLS.s:2854   .debug_str:000000000000053e .LASF28
+     /tmp/cc511rLS.s:2802   .debug_str:0000000000000371 .LASF30
+     /tmp/cc511rLS.s:2814   .debug_str:00000000000003e8 .LASF26
+     /tmp/cc511rLS.s:2818   .debug_str:00000000000003fc .LASF27
+     /tmp/cc511rLS.s:2776   .debug_str:00000000000002db .LASF29
+     /tmp/cc511rLS.s:2754   .debug_str:0000000000000217 .LASF31
+     /tmp/cc511rLS.s:2888   .debug_str:0000000000000630 .LASF90
+     /tmp/cc511rLS.s:2706   .debug_str:0000000000000010 .LASF92
+     /tmp/cc511rLS.s:2940   .debug_str:0000000000000883 .LASF54
+     /tmp/cc511rLS.s:2730   .debug_str:000000000000010e .LASF32
+     /tmp/cc511rLS.s:2908   .debug_str:00000000000006da .LASF33
+     /tmp/cc511rLS.s:2792   .debug_str:0000000000000332 .LASF34
+     /tmp/cc511rLS.s:2840   .debug_str:00000000000004b6 .LASF35
+     /tmp/cc511rLS.s:2836   .debug_str:0000000000000496 .LASF36
+     /tmp/cc511rLS.s:2794   .debug_str:0000000000000337 .LASF37
+     /tmp/cc511rLS.s:2790   .debug_str:0000000000000329 .LASF38
+     /tmp/cc511rLS.s:2708   .debug_str:000000000000002a .LASF39
+     /tmp/cc511rLS.s:2894   .debug_str:0000000000000660 .LASF101
+     /tmp/cc511rLS.s:2834   .debug_str:000000000000048d .LASF44
+     /tmp/cc511rLS.s:2920   .debug_str:00000000000007e1 .LASF46
+     /tmp/cc511rLS.s:2934   .debug_str:0000000000000861 .LASF41
+     /tmp/cc511rLS.s:2714   .debug_str:000000000000004f .LASF43
+     /tmp/cc511rLS.s:2954   .debug_str:00000000000008f0 .LASF45
+     /tmp/cc511rLS.s:2744   .debug_str:000000000000018a .LASF47
+     /tmp/cc511rLS.s:2768   .debug_str:000000000000028e .LASF50
+     /tmp/cc511rLS.s:2852   .debug_str:000000000000052e .LASF51
+     /tmp/cc511rLS.s:2756   .debug_str:0000000000000240 .LASF52
+     /tmp/cc511rLS.s:2860   .debug_str:0000000000000554 .LASF53
+     /tmp/cc511rLS.s:2784   .debug_str:0000000000000308 .LASF123
+     /tmp/cc511rLS.s:2724   .debug_str:00000000000000ae .LASF124
+     /tmp/cc511rLS.s:2858   .debug_str:000000000000054e .LASF55
+     /tmp/cc511rLS.s:2800   .debug_str:000000000000035e .LASF105
+     /tmp/cc511rLS.s:2778   .debug_str:00000000000002ee .LASF56
+     /tmp/cc511rLS.s:2780   .debug_str:00000000000002f4 .LASF57
+     /tmp/cc511rLS.s:2914   .debug_str:00000000000007c3 .LASF58
+     /tmp/cc511rLS.s:2736   .debug_str:000000000000013c .LASF62
+     /tmp/cc511rLS.s:2758   .debug_str:0000000000000245 .LASF59
+     /tmp/cc511rLS.s:2950   .debug_str:00000000000008be .LASF60
+     /tmp/cc511rLS.s:2816   .debug_str:00000000000003f4 .LASF61
+     /tmp/cc511rLS.s:2734   .debug_str:0000000000000128 .LASF63
+     /tmp/cc511rLS.s:2820   .debug_str:000000000000041d .LASF64
+     /tmp/cc511rLS.s:2726   .debug_str:00000000000000d0 .LASF65
+     /tmp/cc511rLS.s:2942   .debug_str:000000000000088b .LASF66
+GAS LISTING /tmp/cc511rLS.s 			page 17
+
+
+     /tmp/cc511rLS.s:2746   .debug_str:00000000000001a6 .LASF67
+     /tmp/cc511rLS.s:2716   .debug_str:0000000000000081 .LASF68
+     /tmp/cc511rLS.s:2890   .debug_str:0000000000000636 .LASF69
+     /tmp/cc511rLS.s:2922   .debug_str:00000000000007fe .LASF70
+     /tmp/cc511rLS.s:2742   .debug_str:000000000000016e .LASF71
+     /tmp/cc511rLS.s:2930   .debug_str:000000000000083b .LASF72
+     /tmp/cc511rLS.s:2876   .debug_str:00000000000005ad .LASF73
+     /tmp/cc511rLS.s:2944   .debug_str:0000000000000896 .LASF74
+     /tmp/cc511rLS.s:2806   .debug_str:00000000000003a4 .LASF75
+     /tmp/cc511rLS.s:2928   .debug_str:0000000000000832 .LASF76
+     /tmp/cc511rLS.s:2924   .debug_str:000000000000080d .LASF77
+     /tmp/cc511rLS.s:2948   .debug_str:00000000000008b7 .LASF78
+     /tmp/cc511rLS.s:2956   .debug_str:00000000000008f8 .LASF79
+     /tmp/cc511rLS.s:2826   .debug_str:0000000000000450 .LASF80
+     /tmp/cc511rLS.s:2862   .debug_str:000000000000055e .LASF81
+     /tmp/cc511rLS.s:2722   .debug_str:00000000000000a3 .LASF82
+     /tmp/cc511rLS.s:2900   .debug_str:0000000000000690 .LASF83
+     /tmp/cc511rLS.s:2824   .debug_str:0000000000000443 .LASF84
+     /tmp/cc511rLS.s:2838   .debug_str:000000000000049c .LASF85
+     /tmp/cc511rLS.s:2738   .debug_str:0000000000000152 .LASF86
+     /tmp/cc511rLS.s:2804   .debug_str:0000000000000392 .LASF87
+     /tmp/cc511rLS.s:2786   .debug_str:000000000000031c .LASF88
+     /tmp/cc511rLS.s:2798   .debug_str:000000000000034c .LASF89
+     /tmp/cc511rLS.s:2896   .debug_str:0000000000000671 .LASF91
+     /tmp/cc511rLS.s:2952   .debug_str:00000000000008d4 .LASF93
+     /tmp/cc511rLS.s:2932   .debug_str:000000000000084c .LASF94
+     /tmp/cc511rLS.s:2880   .debug_str:00000000000005e1 .LASF95
+     /tmp/cc511rLS.s:2882   .debug_str:0000000000000603 .LASF96
+     /tmp/cc511rLS.s:2846   .debug_str:00000000000004f0 .LASF97
+     /tmp/cc511rLS.s:2856   .debug_str:0000000000000549 .LASF98
+     /tmp/cc511rLS.s:2772   .debug_str:00000000000002bc .LASF99
+     /tmp/cc511rLS.s:2870   .debug_str:0000000000000590 .LASF100
+     /tmp/cc511rLS.s:2936   .debug_str:000000000000086f .LASF102
+     /tmp/cc511rLS.s:2904   .debug_str:00000000000006bb .LASF103
+     /tmp/cc511rLS.s:2842   .debug_str:00000000000004bf .LASF104
+     /tmp/cc511rLS.s:2712   .debug_str:000000000000003f .LASF106
+     /tmp/cc511rLS.s:2844   .debug_str:00000000000004d5 .LASF107
+     /tmp/cc511rLS.s:2748   .debug_str:00000000000001be .LASF108
+     /tmp/cc511rLS.s:2872   .debug_str:000000000000059b .LASF109
+     /tmp/cc511rLS.s:2822   .debug_str:0000000000000425 .LASF111
+     /tmp/cc511rLS.s:295    .text:000000000000017c .LFB38
+     /tmp/cc511rLS.s:377    .text:0000000000000210 .LFE38
+     /tmp/cc511rLS.s:2516   .debug_loc:0000000000000000 .LLST4
+     /tmp/cc511rLS.s:2538   .debug_loc:000000000000005f .LLST5
+     /tmp/cc511rLS.s:2564   .debug_loc:00000000000000d1 .LLST6
+     /tmp/cc511rLS.s:323    .text:00000000000001b4 .LVL21
+     /tmp/cc511rLS.s:344    .text:00000000000001e8 .LVL22
+     /tmp/cc511rLS.s:268    .text:0000000000000160 .LFB36
+     /tmp/cc511rLS.s:289    .text:000000000000017c .LFE36
+     /tmp/cc511rLS.s:2589   .debug_loc:0000000000000133 .LLST3
+     /tmp/cc511rLS.s:2868   .debug_str:0000000000000586 .LASF110
+     /tmp/cc511rLS.s:2810   .debug_str:00000000000003c4 .LASF112
+     /tmp/cc511rLS.s:220    .text:0000000000000134 .LFB34
+     /tmp/cc511rLS.s:252    .text:0000000000000160 .LFE34
+     /tmp/cc511rLS.s:2603   .debug_loc:000000000000016c .LLST2
+     /tmp/cc511rLS.s:240    .text:0000000000000150 .LVL16
+     /tmp/cc511rLS.s:96     .text:0000000000000060 .LFB32
+GAS LISTING /tmp/cc511rLS.s 			page 18
+
+
+     /tmp/cc511rLS.s:144    .text:00000000000000bc .LFE32
+     /tmp/cc511rLS.s:112    .text:000000000000007c .LVL4
+     /tmp/cc511rLS.s:131    .text:00000000000000a8 .LVL6
+     /tmp/cc511rLS.s:150    .text:00000000000000bc .LFB31
+     /tmp/cc511rLS.s:214    .text:0000000000000134 .LFE31
+     /tmp/cc511rLS.s:2617   .debug_loc:00000000000001a5 .LLST1
+     /tmp/cc511rLS.s:171    .text:00000000000000e4 .LVL8
+     /tmp/cc511rLS.s:178    .text:00000000000000f0 .LVL9
+     /tmp/cc511rLS.s:190    .text:0000000000000110 .LVL10
+     /tmp/cc511rLS.s:211    .text:0000000000000130 .LVL13
+     /tmp/cc511rLS.s:65     .text:0000000000000038 .LFB30
+     /tmp/cc511rLS.s:90     .text:0000000000000060 .LFE30
+     /tmp/cc511rLS.s:79     .text:0000000000000050 .LVL3
+     /tmp/cc511rLS.s:38     .text:000000000000001c .LFB29
+     /tmp/cc511rLS.s:59     .text:0000000000000038 .LFE29
+     /tmp/cc511rLS.s:10     .text:0000000000000000 .LFB28
+     /tmp/cc511rLS.s:32     .text:000000000000001c .LFE28
+     /tmp/cc511rLS.s:2628   .debug_loc:00000000000001db .LLST0
+     /tmp/cc511rLS.s:454    .text:0000000000000294 .LFE27
+     /tmp/cc511rLS.s:2642   .debug_loc:0000000000000214 .LLST7
+     /tmp/cc511rLS.s:2671   .debug_loc:0000000000000289 .LLST8
+     /tmp/cc511rLS.s:413    .text:0000000000000240 .LVL29
+     /tmp/cc511rLS.s:420    .text:0000000000000254 .LVL30
+     /tmp/cc511rLS.s:428    .text:0000000000000268 .LVL32
+     /tmp/cc511rLS.s:432    .text:0000000000000274 .LVL33
+     /tmp/cc511rLS.s:2884   .debug_str:000000000000060e .LASF113
+     /tmp/cc511rLS.s:2918   .debug_str:00000000000007d9 .LASF115
+     /tmp/cc511rLS.s:2808   .debug_str:00000000000003b9 .LASF114
+     /tmp/cc511rLS.s:2864   .debug_str:0000000000000571 .LASF116
+     /tmp/cc511rLS.s:2760   .debug_str:000000000000024f .LASF117
+     /tmp/cc511rLS.s:2764   .debug_str:0000000000000269 .LASF118
+     /tmp/cc511rLS.s:2782   .debug_str:00000000000002f9 .LASF125
+     /tmp/cc511rLS.s:2946   .debug_str:000000000000089f .LASF126
+     /tmp/cc511rLS.s:298    .text:000000000000017c .LVL19
+     /tmp/cc511rLS.s:321    .text:00000000000001ac .LVL20
+     /tmp/cc511rLS.s:356    .text:00000000000001f4 .LVL23
+     /tmp/cc511rLS.s:363    .text:0000000000000200 .LVL25
+     /tmp/cc511rLS.s:359    .text:00000000000001f8 .LVL24
+     /tmp/cc511rLS.s:370    .text:0000000000000208 .LVL26
+     /tmp/cc511rLS.s:271    .text:0000000000000160 .LVL17
+     /tmp/cc511rLS.s:281    .text:0000000000000170 .LVL18
+     /tmp/cc511rLS.s:225    .text:0000000000000134 .LVL14
+     /tmp/cc511rLS.s:238    .text:0000000000000148 .LVL15
+     /tmp/cc511rLS.s:166    .text:00000000000000d8 .LVL7
+     /tmp/cc511rLS.s:200    .text:000000000000011c .LVL11
+     /tmp/cc511rLS.s:204    .text:0000000000000124 .LVL12
+     /tmp/cc511rLS.s:14     .text:0000000000000000 .LVL0
+     /tmp/cc511rLS.s:24     .text:0000000000000010 .LVL1
+     /tmp/cc511rLS.s:390    .text:0000000000000210 .LVL27
+     /tmp/cc511rLS.s:410    .text:0000000000000238 .LVL28
+     /tmp/cc511rLS.s:425    .text:000000000000025c .LVL31
+     /tmp/cc511rLS.s:446    .text:0000000000000288 .LVL34
+     /tmp/cc511rLS.s:449    .text:000000000000028c .LVL35
+     /tmp/cc511rLS.s:497    .debug_info:0000000000000000 .Ldebug_info0
+     /tmp/cc511rLS.s:255    .gcc_except_table:0000000000000000 .LLSDA34
+     /tmp/cc511rLS.s:456    .gcc_except_table:0000000000000004 .LLSDA27
+
+GAS LISTING /tmp/cc511rLS.s 			page 19
+
+
+UNDEFINED SYMBOLS
+_Z15thread_dispatchv
+_ZN5RISCV10popSppSpieEv
+_ZN9Scheduler3getEv
+_ZN12KernelThread13contextSwitchEPNS_7ContextES1_
+_ZN9Scheduler3putEP12KernelThread
+_Z5kfreePv
+__gxx_personality_v0
+_Z7kmallocm
+_ZN11KernelClassnwEm
+_ZN11KernelClassdlEPv
+_Unwind_Resume

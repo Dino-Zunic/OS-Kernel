@@ -1,0 +1,162 @@
+GAS LISTING /tmp/cc1OoZM1.s 			page 1
+
+
+   1              		.file	"Timer.cpp"
+   2              		.option pic
+   3              		.option norelax
+   4              		.text
+   5              	.Ltext0:
+   6              		.align	2
+   7              		.globl	_ZN5Timer3nowEv
+   9              	_ZN5Timer3nowEv:
+  10              	.LFB0:
+  11              		.file 1 "src/Timer.cpp"
+   1:src/Timer.cpp **** #include "../h/Timer.hpp"
+   2:src/Timer.cpp **** 
+   3:src/Timer.cpp **** uint64 Timer::timeCounter = 0;
+   4:src/Timer.cpp **** 
+   5:src/Timer.cpp **** uint64 Timer::now() {
+  12              		.loc 1 5 21
+  13              		.cfi_startproc
+  14 0000 130101FF 		addi	sp,sp,-16
+  15              		.cfi_def_cfa_offset 16
+  16 0004 23348100 		sd	s0,8(sp)
+  17              		.cfi_offset 8, -8
+  18 0008 13040101 		addi	s0,sp,16
+  19              		.cfi_def_cfa 8, 0
+   6:src/Timer.cpp ****     return timeCounter;
+  20              		.loc 1 6 5
+   7:src/Timer.cpp **** }
+  21              		.loc 1 7 1 is_stmt 0
+  22 000c 17050000 		ld	a0,.LANCHOR0
+  22      03350500 
+  23 0014 03348100 		ld	s0,8(sp)
+  24              		.cfi_restore 8
+  25              		.cfi_def_cfa 2, 16
+  26 0018 13010101 		addi	sp,sp,16
+  27              		.cfi_def_cfa_offset 0
+  28 001c 67800000 		jr	ra
+  29              		.cfi_endproc
+  30              	.LFE0:
+  32              		.align	2
+  33              		.globl	_ZN5Timer6updateEv
+  35              	_ZN5Timer6updateEv:
+  36              	.LFB1:
+   8:src/Timer.cpp **** 
+   9:src/Timer.cpp **** void Timer::update() {
+  37              		.loc 1 9 22 is_stmt 1
+  38              		.cfi_startproc
+  39 0020 130101FF 		addi	sp,sp,-16
+  40              		.cfi_def_cfa_offset 16
+  41 0024 23348100 		sd	s0,8(sp)
+  42              		.cfi_offset 8, -8
+  43 0028 13040101 		addi	s0,sp,16
+  44              		.cfi_def_cfa 8, 0
+  10:src/Timer.cpp ****     timeCounter++;
+  45              		.loc 1 10 5
+  46              		.loc 1 10 16 is_stmt 0
+  47 002c 17070000 		lla	a4,.LANCHOR0
+  47      13070700 
+  48 0034 83370700 		ld	a5,0(a4)
+GAS LISTING /tmp/cc1OoZM1.s 			page 2
+
+
+  49 0038 93871700 		addi	a5,a5,1
+  50 003c 2330F700 		sd	a5,0(a4)
+  11:src/Timer.cpp **** }
+  51              		.loc 1 11 1
+  52 0040 03348100 		ld	s0,8(sp)
+  53              		.cfi_restore 8
+  54              		.cfi_def_cfa 2, 16
+  55 0044 13010101 		addi	sp,sp,16
+  56              		.cfi_def_cfa_offset 0
+  57 0048 67800000 		jr	ra
+  58              		.cfi_endproc
+  59              	.LFE1:
+  61              		.globl	_ZN5Timer11timeCounterE
+  62              		.bss
+  63              		.align	3
+  64              		.set	.LANCHOR0,. + 0
+  67              	_ZN5Timer11timeCounterE:
+  68 0000 00000000 		.zero	8
+  68      00000000 
+  69              		.text
+  70              	.Letext0:
+  71              		.file 2 "src/../h/../lib/hw.h"
+  72              		.file 3 "src/../h/Timer.hpp"
+GAS LISTING /tmp/cc1OoZM1.s 			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 Timer.cpp
+     /tmp/cc1OoZM1.s:9      .text:0000000000000000 _ZN5Timer3nowEv
+     /tmp/cc1OoZM1.s:13     .text:0000000000000000 .L0 
+     /tmp/cc1OoZM1.s:14     .text:0000000000000000 .L0 
+     /tmp/cc1OoZM1.s:15     .text:0000000000000004 .L0 
+     /tmp/cc1OoZM1.s:17     .text:0000000000000008 .L0 
+     /tmp/cc1OoZM1.s:19     .text:000000000000000c .L0 
+     /tmp/cc1OoZM1.s:21     .text:000000000000000c .L0 
+     /tmp/cc1OoZM1.s:22     .text:000000000000000c .L0 
+     /tmp/cc1OoZM1.s:24     .text:0000000000000018 .L0 
+     /tmp/cc1OoZM1.s:25     .text:0000000000000018 .L0 
+     /tmp/cc1OoZM1.s:27     .text:000000000000001c .L0 
+     /tmp/cc1OoZM1.s:29     .text:0000000000000020 .L0 
+     /tmp/cc1OoZM1.s:35     .text:0000000000000020 _ZN5Timer6updateEv
+     /tmp/cc1OoZM1.s:38     .text:0000000000000020 .L0 
+     /tmp/cc1OoZM1.s:39     .text:0000000000000020 .L0 
+     /tmp/cc1OoZM1.s:40     .text:0000000000000024 .L0 
+     /tmp/cc1OoZM1.s:42     .text:0000000000000028 .L0 
+     /tmp/cc1OoZM1.s:44     .text:000000000000002c .L0 
+     /tmp/cc1OoZM1.s:46     .text:000000000000002c .L0 
+     /tmp/cc1OoZM1.s:47     .text:000000000000002c .L0 
+     /tmp/cc1OoZM1.s:52     .text:0000000000000040 .L0 
+     /tmp/cc1OoZM1.s:53     .text:0000000000000044 .L0 
+     /tmp/cc1OoZM1.s:54     .text:0000000000000044 .L0 
+     /tmp/cc1OoZM1.s:56     .text:0000000000000048 .L0 
+     /tmp/cc1OoZM1.s:58     .text:000000000000004c .L0 
+     /tmp/cc1OoZM1.s:67     .bss:0000000000000000 _ZN5Timer11timeCounterE
+     /tmp/cc1OoZM1.s:64     .bss:0000000000000000 .LANCHOR0
+     /tmp/cc1OoZM1.s:73     .text:000000000000004c .L0 
+     /tmp/cc1OoZM1.s:22     .text:000000000000000c .L0 
+     /tmp/cc1OoZM1.s:47     .text:000000000000002c .L0 
+     /tmp/cc1OoZM1.s:258    .debug_abbrev:0000000000000000 .Ldebug_abbrev0
+     /tmp/cc1OoZM1.s:573    .debug_str:0000000000000148 .LASF18
+     /tmp/cc1OoZM1.s:543    .debug_str:0000000000000057 .LASF19
+     /tmp/cc1OoZM1.s:557    .debug_str:00000000000000bd .LASF20
+     /tmp/cc1OoZM1.s:5      .text:0000000000000000 .Ltext0
+     /tmp/cc1OoZM1.s:70     .text:000000000000004c .Letext0
+     /tmp/cc1OoZM1.s:529    .debug_line:0000000000000000 .Ldebug_line0
+     /tmp/cc1OoZM1.s:533    .debug_str:0000000000000018 .LASF0
+     /tmp/cc1OoZM1.s:571    .debug_str:0000000000000135 .LASF1
+     /tmp/cc1OoZM1.s:535    .debug_str:0000000000000025 .LASF2
+     /tmp/cc1OoZM1.s:553    .debug_str:00000000000000aa .LASF4
+     /tmp/cc1OoZM1.s:545    .debug_str:0000000000000065 .LASF3
+     /tmp/cc1OoZM1.s:541    .debug_str:0000000000000050 .LASF5
+     /tmp/cc1OoZM1.s:559    .debug_str:00000000000000dc .LASF6
+     /tmp/cc1OoZM1.s:551    .debug_str:0000000000000097 .LASF7
+     /tmp/cc1OoZM1.s:569    .debug_str:0000000000000122 .LASF8
+     /tmp/cc1OoZM1.s:579    .debug_str:000000000000022e .LASF9
+     /tmp/cc1OoZM1.s:537    .debug_str:0000000000000033 .LASF10
+     /tmp/cc1OoZM1.s:539    .debug_str:0000000000000041 .LASF11
+     /tmp/cc1OoZM1.s:575    .debug_str:000000000000020c .LASF12
+     /tmp/cc1OoZM1.s:549    .debug_str:0000000000000087 .LASF13
+     /tmp/cc1OoZM1.s:581    .debug_str:000000000000023e .LASF14
+     /tmp/cc1OoZM1.s:555    .debug_str:00000000000000b1 .LASF15
+     /tmp/cc1OoZM1.s:565    .debug_str:0000000000000105 .LASF16
+     /tmp/cc1OoZM1.s:561    .debug_str:00000000000000e3 .LASF17
+GAS LISTING /tmp/cc1OoZM1.s 			page 4
+
+
+     /tmp/cc1OoZM1.s:583    .debug_str:000000000000024e .LASF21
+     /tmp/cc1OoZM1.s:547    .debug_str:0000000000000077 .LASF22
+     /tmp/cc1OoZM1.s:567    .debug_str:000000000000011b .LASF23
+     /tmp/cc1OoZM1.s:577    .debug_str:000000000000021b .LASF24
+     /tmp/cc1OoZM1.s:563    .debug_str:00000000000000f9 .LASF25
+     /tmp/cc1OoZM1.s:531    .debug_str:0000000000000000 .LASF26
+     /tmp/cc1OoZM1.s:36     .text:0000000000000020 .LFB1
+     /tmp/cc1OoZM1.s:59     .text:000000000000004c .LFE1
+     /tmp/cc1OoZM1.s:10     .text:0000000000000000 .LFB0
+     /tmp/cc1OoZM1.s:30     .text:0000000000000020 .LFE0
+     /tmp/cc1OoZM1.s:74     .debug_info:0000000000000000 .Ldebug_info0
+
+NO UNDEFINED SYMBOLS

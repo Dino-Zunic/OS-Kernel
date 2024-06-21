@@ -1,0 +1,2452 @@
+GAS LISTING /tmp/ccFFokii.s 			page 1
+
+
+   1              		.file	"KernelSemaphore.cpp"
+   2              		.option pic
+   3              		.option norelax
+   4              		.text
+   5              	.Ltext0:
+   6              		.align	2
+   8              	_Z41__static_initialization_and_destruction_0ii:
+   9              	.LFB43:
+  10              		.file 1 "src/KernelSemaphore.cpp"
+   1:src/KernelSemaphore.cpp **** #include "../h/KernelSemaphore.hpp"
+   2:src/KernelSemaphore.cpp **** #include "../h/KernelThread.hpp"
+   3:src/KernelSemaphore.cpp **** #include "../h/Timer.hpp"
+   4:src/KernelSemaphore.cpp **** #include "../h/Scheduler.hpp"
+   5:src/KernelSemaphore.cpp **** #include "../test/printing.hpp"
+   6:src/KernelSemaphore.cpp **** 
+   7:src/KernelSemaphore.cpp **** List<KernelSemaphore> KernelSemaphore::declaredSemaphores;
+   8:src/KernelSemaphore.cpp **** 
+   9:src/KernelSemaphore.cpp **** constexpr uint64 INFINITY = 1ull << 63;
+  10:src/KernelSemaphore.cpp **** 
+  11:src/KernelSemaphore.cpp **** void KernelSemaphore::unblock() {
+  12:src/KernelSemaphore.cpp ****     KernelThread* thread = blocked.dequeue();
+  13:src/KernelSemaphore.cpp ****     if (thread->isFinished()) {
+  14:src/KernelSemaphore.cpp ****         return;
+  15:src/KernelSemaphore.cpp ****     }
+  16:src/KernelSemaphore.cpp ****     if (closed) {
+  17:src/KernelSemaphore.cpp ****         thread->interruptResult = SEMDEAD;
+  18:src/KernelSemaphore.cpp ****     }
+  19:src/KernelSemaphore.cpp ****     Scheduler::put(thread);
+  20:src/KernelSemaphore.cpp **** }
+  21:src/KernelSemaphore.cpp **** 
+  22:src/KernelSemaphore.cpp **** void KernelSemaphore::block(time_t time) {
+  23:src/KernelSemaphore.cpp ****     KernelThread *old = KernelThread::running;
+  24:src/KernelSemaphore.cpp ****     old->whenFinished = Timer::now() + time;
+  25:src/KernelSemaphore.cpp ****     old->interruptResult = SUCCESS;
+  26:src/KernelSemaphore.cpp ****     auto *element = new List<KernelThread>::Element(old, 0);
+  27:src/KernelSemaphore.cpp ****     List<KernelThread>::Element *prev = nullptr, *curr = blocked.head;
+  28:src/KernelSemaphore.cpp ****     while (curr) {
+  29:src/KernelSemaphore.cpp ****         if (element->data->whenFinished < curr->data->whenFinished) {
+  30:src/KernelSemaphore.cpp ****             break;
+  31:src/KernelSemaphore.cpp ****         }
+  32:src/KernelSemaphore.cpp ****         prev = curr;
+  33:src/KernelSemaphore.cpp ****         curr = curr->next;
+  34:src/KernelSemaphore.cpp ****     }
+  35:src/KernelSemaphore.cpp **** 
+  36:src/KernelSemaphore.cpp ****     if (!blocked.head) {
+  37:src/KernelSemaphore.cpp ****         blocked.head = blocked.tail = element;
+  38:src/KernelSemaphore.cpp ****     } else {
+  39:src/KernelSemaphore.cpp ****         (prev ? prev->next : blocked.head) = element;
+  40:src/KernelSemaphore.cpp ****         element->next = curr;
+  41:src/KernelSemaphore.cpp ****         if (curr == nullptr) {
+  42:src/KernelSemaphore.cpp ****             blocked.tail = element;
+  43:src/KernelSemaphore.cpp ****         }
+  44:src/KernelSemaphore.cpp ****     }
+  45:src/KernelSemaphore.cpp **** 
+  46:src/KernelSemaphore.cpp ****     KernelThread::running = Scheduler::get();
+  47:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+  48:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+GAS LISTING /tmp/ccFFokii.s 			page 2
+
+
+  49:src/KernelSemaphore.cpp **** }
+  50:src/KernelSemaphore.cpp **** 
+  51:src/KernelSemaphore.cpp **** void KernelSemaphore::doSwitch(KernelThread *old) {
+  52:src/KernelSemaphore.cpp ****     KernelThread::running = Scheduler::get();
+  53:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+  54:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+  55:src/KernelSemaphore.cpp **** }
+  56:src/KernelSemaphore.cpp **** 
+  57:src/KernelSemaphore.cpp **** void KernelSemaphore::wait() {
+  58:src/KernelSemaphore.cpp ****     timedWait(INFINITY);
+  59:src/KernelSemaphore.cpp **** }
+  60:src/KernelSemaphore.cpp **** 
+  61:src/KernelSemaphore.cpp **** void KernelSemaphore::signal() {
+  62:src/KernelSemaphore.cpp ****     if (closed) {
+  63:src/KernelSemaphore.cpp ****         KernelThread::running->interruptResult = SEMDEAD;
+  64:src/KernelSemaphore.cpp ****     }
+  65:src/KernelSemaphore.cpp ****     if (++value <= 0) {
+  66:src/KernelSemaphore.cpp ****         unblock();
+  67:src/KernelSemaphore.cpp ****     }
+  68:src/KernelSemaphore.cpp **** }
+  69:src/KernelSemaphore.cpp **** 
+  70:src/KernelSemaphore.cpp **** void KernelSemaphore::timedWait(time_t time) {
+  71:src/KernelSemaphore.cpp ****     if (--value < 0) {
+  72:src/KernelSemaphore.cpp ****         block(time);
+  73:src/KernelSemaphore.cpp ****     }
+  74:src/KernelSemaphore.cpp **** }
+  75:src/KernelSemaphore.cpp **** 
+  76:src/KernelSemaphore.cpp **** int KernelSemaphore::tryWait() {
+  77:src/KernelSemaphore.cpp ****     if (closed) {
+  78:src/KernelSemaphore.cpp ****         return SEMDEAD;
+  79:src/KernelSemaphore.cpp ****     }
+  80:src/KernelSemaphore.cpp ****     if (value > 0) {
+  81:src/KernelSemaphore.cpp ****         --value;
+  82:src/KernelSemaphore.cpp ****         return UNLOCKED;
+  83:src/KernelSemaphore.cpp ****     }
+  84:src/KernelSemaphore.cpp ****     return SUCCESS;
+  85:src/KernelSemaphore.cpp **** }
+  86:src/KernelSemaphore.cpp **** 
+  87:src/KernelSemaphore.cpp **** int KernelSemaphore::getValue() const {
+  88:src/KernelSemaphore.cpp ****     return value;
+  89:src/KernelSemaphore.cpp **** }
+  90:src/KernelSemaphore.cpp **** 
+  91:src/KernelSemaphore.cpp **** bool KernelSemaphore::isClosed() const {
+  92:src/KernelSemaphore.cpp ****     return closed;
+  93:src/KernelSemaphore.cpp **** }
+  94:src/KernelSemaphore.cpp **** 
+  95:src/KernelSemaphore.cpp **** void KernelSemaphore::close() {
+  96:src/KernelSemaphore.cpp ****     closed = true;
+  97:src/KernelSemaphore.cpp ****     while (!blocked.isEmpty()) {
+  98:src/KernelSemaphore.cpp ****         unblock();
+  99:src/KernelSemaphore.cpp ****     }
+ 100:src/KernelSemaphore.cpp ****     declaredSemaphores.removeFromList(this);
+ 101:src/KernelSemaphore.cpp **** }
+ 102:src/KernelSemaphore.cpp **** 
+ 103:src/KernelSemaphore.cpp **** 
+ 104:src/KernelSemaphore.cpp **** void KernelSemaphore::update() {
+ 105:src/KernelSemaphore.cpp ****     for (auto *curr = declaredSemaphores.head; curr; curr = curr->next) {
+GAS LISTING /tmp/ccFFokii.s 			page 3
+
+
+ 106:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 107:src/KernelSemaphore.cpp ****     }
+ 108:src/KernelSemaphore.cpp **** }
+ 109:src/KernelSemaphore.cpp **** 
+ 110:src/KernelSemaphore.cpp **** void KernelSemaphore::updateIndividually() {
+ 111:src/KernelSemaphore.cpp ****     while (!blocked.isEmpty() && blocked.peekFirst()->whenFinished <= Timer::now()) {
+ 112:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 113:src/KernelSemaphore.cpp ****         unblock();
+ 114:src/KernelSemaphore.cpp ****     }
+ 115:src/KernelSemaphore.cpp **** }
+ 116:src/KernelSemaphore.cpp **** 
+ 117:src/KernelSemaphore.cpp **** KernelSemaphore *KernelSemaphore::createKernelSemaphore(uint64 value) {
+ 118:src/KernelSemaphore.cpp ****     KernelSemaphore *handle = new KernelSemaphore(value);
+ 119:src/KernelSemaphore.cpp ****     declaredSemaphores.enqueue(handle);
+ 120:src/KernelSemaphore.cpp ****     return handle;
+ 121:src/KernelSemaphore.cpp **** }
+  11              		.loc 1 121 1
+  12              		.cfi_startproc
+  13              	.LVL0:
+  14 0000 130101FF 		addi	sp,sp,-16
+  15              		.cfi_def_cfa_offset 16
+  16 0004 23348100 		sd	s0,8(sp)
+  17              		.cfi_offset 8, -8
+  18 0008 13040101 		addi	s0,sp,16
+  19              		.cfi_def_cfa 8, 0
+  20              		.loc 1 121 1 is_stmt 0
+  21 000c 93071000 		li	a5,1
+  22 0010 6308F500 		beq	a0,a5,.L4
+  23              	.L1:
+  24 0014 03348100 		ld	s0,8(sp)
+  25              		.cfi_remember_state
+  26              		.cfi_restore 8
+  27              		.cfi_def_cfa 2, 16
+  28 0018 13010101 		addi	sp,sp,16
+  29              		.cfi_def_cfa_offset 0
+  30 001c 67800000 		jr	ra
+  31              	.L4:
+  32              		.cfi_restore_state
+  33              		.loc 1 121 1 discriminator 1
+  34 0020 B7070100 		li	a5,65536
+  35 0024 9387F7FF 		addi	a5,a5,-1
+  36 0028 E396F5FE 		bne	a1,a5,.L1
+  37              	.LVL1:
+  38              	.LBB38:
+  39              	.LBB39:
+  40              	.LBB40:
+  41              		.file 2 "src/../h/../h/List.hpp"
+   1:src/../h/../h/List.hpp **** #ifndef PROJECT_BASE_V1_1_LIST_HPP
+   2:src/../h/../h/List.hpp **** #define PROJECT_BASE_V1_1_LIST_HPP
+   3:src/../h/../h/List.hpp **** 
+   4:src/../h/../h/List.hpp **** #include "KernelClass.hpp"
+   5:src/../h/../h/List.hpp **** 
+   6:src/../h/../h/List.hpp **** template<typename T>
+   7:src/../h/../h/List.hpp **** class List : public KernelClass {
+   8:src/../h/../h/List.hpp **** public:
+   9:src/../h/../h/List.hpp ****     struct Element : public KernelClass {
+  10:src/../h/../h/List.hpp ****         T *data;
+GAS LISTING /tmp/ccFFokii.s 			page 4
+
+
+  11:src/../h/../h/List.hpp ****         Element *next;
+  12:src/../h/../h/List.hpp **** 
+  13:src/../h/../h/List.hpp ****         Element(T *data, Element *next) : data(data), next(next) {}
+  14:src/../h/../h/List.hpp ****     };
+  15:src/../h/../h/List.hpp **** 
+  16:src/../h/../h/List.hpp ****     Element *head, *tail;
+  17:src/../h/../h/List.hpp **** 
+  18:src/../h/../h/List.hpp ****     List() : head(0), tail(0) {}
+  42              		.loc 2 18 29
+  43 002c 97070000 		lla	a5,.LANCHOR0
+  43      93870700 
+  44 0034 23B00700 		sd	zero,0(a5)
+  45 0038 23B40700 		sd	zero,8(a5)
+  46              	.LVL2:
+  47              	.LBE40:
+  48              	.LBE39:
+  49              	.LBE38:
+  50              		.loc 1 121 1
+  51 003c 6FF09FFD 		j	.L1
+  52              		.cfi_endproc
+  53              	.LFE43:
+  55              		.align	2
+  56              		.globl	_ZN15KernelSemaphore7unblockEv
+  58              	_ZN15KernelSemaphore7unblockEv:
+  59              	.LFB13:
+  11:src/KernelSemaphore.cpp ****     KernelThread* thread = blocked.dequeue();
+  60              		.loc 1 11 33 is_stmt 1
+  61              		.cfi_startproc
+  62              	.LVL3:
+  63 0040 130101FE 		addi	sp,sp,-32
+  64              		.cfi_def_cfa_offset 32
+  65 0044 233C1100 		sd	ra,24(sp)
+  66 0048 23388100 		sd	s0,16(sp)
+  67 004c 23349100 		sd	s1,8(sp)
+  68 0050 23302101 		sd	s2,0(sp)
+  69              		.cfi_offset 1, -8
+  70              		.cfi_offset 8, -16
+  71              		.cfi_offset 9, -24
+  72              		.cfi_offset 18, -32
+  73 0054 13040102 		addi	s0,sp,32
+  74              		.cfi_def_cfa 8, 0
+  75 0058 93040500 		mv	s1,a0
+  12:src/KernelSemaphore.cpp ****     if (thread->isFinished()) {
+  76              		.loc 1 12 5
+  77              	.LVL4:
+  78              	.LBB41:
+  79              	.LBB42:
+  19:src/../h/../h/List.hpp **** 
+  20:src/../h/../h/List.hpp ****     List(const List<T> &) = delete;
+  21:src/../h/../h/List.hpp ****     List<T> &operator =(const List<T> &) = delete;
+  22:src/../h/../h/List.hpp **** 
+  23:src/../h/../h/List.hpp ****     void addFirst(T *data) {
+  24:src/../h/../h/List.hpp ****         Element *element = new Element(data, head);
+  25:src/../h/../h/List.hpp ****         head = element;
+  26:src/../h/../h/List.hpp ****         if (!tail) {
+  27:src/../h/../h/List.hpp ****             tail = head;
+  28:src/../h/../h/List.hpp ****         }
+GAS LISTING /tmp/ccFFokii.s 			page 5
+
+
+  29:src/../h/../h/List.hpp ****     }
+  30:src/../h/../h/List.hpp ****     void enqueue(T *data) {
+  31:src/../h/../h/List.hpp ****         Element *element = new Element(data, 0);
+  32:src/../h/../h/List.hpp ****         if (tail) {
+  33:src/../h/../h/List.hpp ****             tail->next = element;
+  34:src/../h/../h/List.hpp ****             tail = element;
+  35:src/../h/../h/List.hpp ****         }
+  36:src/../h/../h/List.hpp ****         else {
+  37:src/../h/../h/List.hpp ****             head = tail = element;
+  38:src/../h/../h/List.hpp ****         }
+  39:src/../h/../h/List.hpp ****     }
+  40:src/../h/../h/List.hpp **** 
+  41:src/../h/../h/List.hpp ****     T *dequeue() {
+  42:src/../h/../h/List.hpp ****         if (!head) {
+  80              		.loc 2 42 14 is_stmt 0
+  81 005c 03358500 		ld	a0,8(a0)
+  82              	.LVL5:
+  83              		.loc 2 42 9
+  84 0060 63060506 		beqz	a0,.L10
+  85              	.LVL6:
+  43:src/../h/../h/List.hpp ****             return 0;
+  44:src/../h/../h/List.hpp ****         }
+  45:src/../h/../h/List.hpp ****         Element *element = head;
+  46:src/../h/../h/List.hpp ****         head = head->next;
+  86              		.loc 2 46 22
+  87 0064 83378500 		ld	a5,8(a0)
+  88              		.loc 2 46 9
+  89 0068 23B4F400 		sd	a5,8(s1)
+  47:src/../h/../h/List.hpp ****         if (!head) {
+  90              		.loc 2 47 9
+  91 006c 638C0704 		beqz	a5,.L12
+  92              	.L7:
+  48:src/../h/../h/List.hpp ****             tail = 0;
+  49:src/../h/../h/List.hpp ****         }
+  50:src/../h/../h/List.hpp ****         T *result = element->data;
+  93              		.loc 2 50 12
+  94 0070 03390500 		ld	s2,0(a0)
+  95              	.LVL7:
+  51:src/../h/../h/List.hpp ****         delete element;
+  96              		.loc 2 51 9
+  97 0074 97000000 		call	_ZN11KernelClassdlEPv@plt
+  97      E7800000 
+  98              	.LVL8:
+  99              	.L6:
+ 100              	.LBE42:
+ 101              	.LBE41:
+  13:src/KernelSemaphore.cpp ****         return;
+ 102              		.loc 1 13 5 is_stmt 1
+  13:src/KernelSemaphore.cpp ****         return;
+ 103              		.loc 1 13 27 is_stmt 0
+ 104 007c 13050900 		mv	a0,s2
+ 105 0080 97000000 		call	_ZNK12KernelThread10isFinishedEv@plt
+ 105      E7800000 
+ 106              	.LVL9:
+  13:src/KernelSemaphore.cpp ****         return;
+ 107              		.loc 1 13 5
+ 108 0088 63120502 		bnez	a0,.L5
+GAS LISTING /tmp/ccFFokii.s 			page 6
+
+
+  16:src/KernelSemaphore.cpp ****         thread->interruptResult = SEMDEAD;
+ 109              		.loc 1 16 5 is_stmt 1
+  16:src/KernelSemaphore.cpp ****         thread->interruptResult = SEMDEAD;
+ 110              		.loc 1 16 9 is_stmt 0
+ 111 008c 83C7C401 		lbu	a5,28(s1)
+ 112 0090 93F7F70F 		andi	a5,a5,0xff
+  16:src/KernelSemaphore.cpp ****         thread->interruptResult = SEMDEAD;
+ 113              		.loc 1 16 5
+ 114 0094 63860700 		beqz	a5,.L9
+  17:src/KernelSemaphore.cpp ****     }
+ 115              		.loc 1 17 9 is_stmt 1
+  17:src/KernelSemaphore.cpp ****     }
+ 116              		.loc 1 17 33 is_stmt 0
+ 117 0098 9307F0FF 		li	a5,-1
+ 118 009c 233CF902 		sd	a5,56(s2)
+ 119              	.L9:
+  19:src/KernelSemaphore.cpp **** }
+ 120              		.loc 1 19 5 is_stmt 1
+  19:src/KernelSemaphore.cpp **** }
+ 121              		.loc 1 19 19 is_stmt 0
+ 122 00a0 13050900 		mv	a0,s2
+ 123 00a4 97000000 		call	_ZN9Scheduler3putEP12KernelThread@plt
+ 123      E7800000 
+ 124              	.LVL10:
+ 125              	.L5:
+  20:src/KernelSemaphore.cpp **** 
+ 126              		.loc 1 20 1
+ 127 00ac 83308101 		ld	ra,24(sp)
+ 128              		.cfi_remember_state
+ 129              		.cfi_restore 1
+ 130 00b0 03340101 		ld	s0,16(sp)
+ 131              		.cfi_restore 8
+ 132              		.cfi_def_cfa 2, 32
+ 133 00b4 83348100 		ld	s1,8(sp)
+ 134              		.cfi_restore 9
+ 135              	.LVL11:
+ 136 00b8 03390100 		ld	s2,0(sp)
+ 137              		.cfi_restore 18
+ 138              	.LVL12:
+ 139 00bc 13010102 		addi	sp,sp,32
+ 140              		.cfi_def_cfa_offset 0
+ 141 00c0 67800000 		jr	ra
+ 142              	.LVL13:
+ 143              	.L12:
+ 144              		.cfi_restore_state
+ 145              	.LBB44:
+ 146              	.LBB43:
+  48:src/../h/../h/List.hpp ****         }
+ 147              		.loc 2 48 13
+ 148 00c4 23B80400 		sd	zero,16(s1)
+ 149 00c8 6FF09FFA 		j	.L7
+ 150              	.LVL14:
+ 151              	.L10:
+  43:src/../h/../h/List.hpp ****         }
+ 152              		.loc 2 43 20
+ 153 00cc 13090500 		mv	s2,a0
+ 154 00d0 6FF0DFFA 		j	.L6
+GAS LISTING /tmp/ccFFokii.s 			page 7
+
+
+ 155              	.LBE43:
+ 156              	.LBE44:
+ 157              		.cfi_endproc
+ 158              	.LFE13:
+ 160              		.align	2
+ 161              		.globl	_ZN15KernelSemaphore5blockEm
+ 163              	_ZN15KernelSemaphore5blockEm:
+ 164              	.LFB14:
+  22:src/KernelSemaphore.cpp ****     KernelThread *old = KernelThread::running;
+ 165              		.loc 1 22 42 is_stmt 1
+ 166              		.cfi_startproc
+ 167              	.LVL15:
+ 168 00d4 130101FD 		addi	sp,sp,-48
+ 169              		.cfi_def_cfa_offset 48
+ 170 00d8 23341102 		sd	ra,40(sp)
+ 171 00dc 23308102 		sd	s0,32(sp)
+ 172 00e0 233C9100 		sd	s1,24(sp)
+ 173 00e4 23382101 		sd	s2,16(sp)
+ 174 00e8 23343101 		sd	s3,8(sp)
+ 175              		.cfi_offset 1, -8
+ 176              		.cfi_offset 8, -16
+ 177              		.cfi_offset 9, -24
+ 178              		.cfi_offset 18, -32
+ 179              		.cfi_offset 19, -40
+ 180 00ec 13040103 		addi	s0,sp,48
+ 181              		.cfi_def_cfa 8, 0
+ 182 00f0 13090500 		mv	s2,a0
+ 183 00f4 93890500 		mv	s3,a1
+  23:src/KernelSemaphore.cpp ****     old->whenFinished = Timer::now() + time;
+ 184              		.loc 1 23 5
+  23:src/KernelSemaphore.cpp ****     old->whenFinished = Timer::now() + time;
+ 185              		.loc 1 23 19 is_stmt 0
+ 186 00f8 97070000 		la	a5,_ZN12KernelThread7runningE
+ 186      83B70700 
+ 187 0100 83B40700 		ld	s1,0(a5)
+ 188              	.LVL16:
+  24:src/KernelSemaphore.cpp ****     old->interruptResult = SUCCESS;
+ 189              		.loc 1 24 5 is_stmt 1
+  24:src/KernelSemaphore.cpp ****     old->interruptResult = SUCCESS;
+ 190              		.loc 1 24 35 is_stmt 0
+ 191 0104 97000000 		call	_ZN5Timer3nowEv@plt
+ 191      E7800000 
+ 192              	.LVL17:
+  24:src/KernelSemaphore.cpp ****     old->interruptResult = SUCCESS;
+ 193              		.loc 1 24 38
+ 194 010c 33053501 		add	a0,a0,s3
+  24:src/KernelSemaphore.cpp ****     old->interruptResult = SUCCESS;
+ 195              		.loc 1 24 23
+ 196 0110 23B8A402 		sd	a0,48(s1)
+  25:src/KernelSemaphore.cpp ****     auto *element = new List<KernelThread>::Element(old, 0);
+ 197              		.loc 1 25 5 is_stmt 1
+  25:src/KernelSemaphore.cpp ****     auto *element = new List<KernelThread>::Element(old, 0);
+ 198              		.loc 1 25 26 is_stmt 0
+ 199 0114 23BC0402 		sd	zero,56(s1)
+  26:src/KernelSemaphore.cpp ****     List<KernelThread>::Element *prev = nullptr, *curr = blocked.head;
+ 200              		.loc 1 26 5 is_stmt 1
+  26:src/KernelSemaphore.cpp ****     List<KernelThread>::Element *prev = nullptr, *curr = blocked.head;
+GAS LISTING /tmp/ccFFokii.s 			page 8
+
+
+ 201              		.loc 1 26 59 is_stmt 0
+ 202 0118 13050001 		li	a0,16
+ 203 011c 97000000 		call	_ZN11KernelClassnwEm@plt
+ 203      E7800000 
+ 204              	.LVL18:
+ 205              	.LBB45:
+ 206              	.LBB46:
+  13:src/../h/../h/List.hpp ****     };
+ 207              		.loc 2 13 64
+ 208 0124 23309500 		sd	s1,0(a0)
+ 209 0128 23340500 		sd	zero,8(a0)
+ 210              	.LVL19:
+ 211              	.LBE46:
+ 212              	.LBE45:
+  27:src/KernelSemaphore.cpp ****     while (curr) {
+ 213              		.loc 1 27 5 is_stmt 1
+  27:src/KernelSemaphore.cpp ****     while (curr) {
+ 214              		.loc 1 27 51 is_stmt 0
+ 215 012c 83358900 		ld	a1,8(s2)
+ 216              	.LVL20:
+ 217 0130 93870500 		mv	a5,a1
+  27:src/KernelSemaphore.cpp ****     while (curr) {
+ 218              		.loc 1 27 34
+ 219 0134 13060000 		li	a2,0
+ 220              	.LVL21:
+ 221              	.L15:
+  28:src/KernelSemaphore.cpp ****         if (element->data->whenFinished < curr->data->whenFinished) {
+ 222              		.loc 1 28 5 is_stmt 1
+  28:src/KernelSemaphore.cpp ****         if (element->data->whenFinished < curr->data->whenFinished) {
+ 223              		.loc 1 28 12
+ 224 0138 63800702 		beqz	a5,.L14
+  29:src/KernelSemaphore.cpp ****             break;
+ 225              		.loc 1 29 9
+  29:src/KernelSemaphore.cpp ****             break;
+ 226              		.loc 1 29 28 is_stmt 0
+ 227 013c 83B60403 		ld	a3,48(s1)
+  29:src/KernelSemaphore.cpp ****             break;
+ 228              		.loc 1 29 49
+ 229 0140 03B70700 		ld	a4,0(a5)
+  29:src/KernelSemaphore.cpp ****             break;
+ 230              		.loc 1 29 55
+ 231 0144 03370703 		ld	a4,48(a4)
+  29:src/KernelSemaphore.cpp ****             break;
+ 232              		.loc 1 29 9
+ 233 0148 63E8E600 		bltu	a3,a4,.L14
+  32:src/KernelSemaphore.cpp ****         curr = curr->next;
+ 234              		.loc 1 32 9 is_stmt 1
+ 235              	.LVL22:
+  33:src/KernelSemaphore.cpp ****     }
+ 236              		.loc 1 33 9
+  32:src/KernelSemaphore.cpp ****         curr = curr->next;
+ 237              		.loc 1 32 14 is_stmt 0
+ 238 014c 13860700 		mv	a2,a5
+  33:src/KernelSemaphore.cpp ****     }
+ 239              		.loc 1 33 14
+ 240 0150 83B78700 		ld	a5,8(a5)
+ 241              	.LVL23:
+GAS LISTING /tmp/ccFFokii.s 			page 9
+
+
+  28:src/KernelSemaphore.cpp ****         if (element->data->whenFinished < curr->data->whenFinished) {
+ 242              		.loc 1 28 5
+ 243 0154 6FF05FFE 		j	.L15
+ 244              	.L14:
+  36:src/KernelSemaphore.cpp ****         blocked.head = blocked.tail = element;
+ 245              		.loc 1 36 5 is_stmt 1
+ 246 0158 63800506 		beqz	a1,.L21
+  39:src/KernelSemaphore.cpp ****         element->next = curr;
+ 247              		.loc 1 39 9
+  39:src/KernelSemaphore.cpp ****         element->next = curr;
+ 248              		.loc 1 39 44 is_stmt 0
+ 249 015c 63040606 		beqz	a2,.L18
+  39:src/KernelSemaphore.cpp ****         element->next = curr;
+ 250              		.loc 1 39 44 discriminator 1
+ 251 0160 2334A600 		sd	a0,8(a2)
+ 252              	.L19:
+  40:src/KernelSemaphore.cpp ****         if (curr == nullptr) {
+ 253              		.loc 1 40 9 is_stmt 1
+  40:src/KernelSemaphore.cpp ****         if (curr == nullptr) {
+ 254              		.loc 1 40 23 is_stmt 0
+ 255 0164 2334F500 		sd	a5,8(a0)
+  41:src/KernelSemaphore.cpp ****             blocked.tail = element;
+ 256              		.loc 1 41 9 is_stmt 1
+ 257 0168 63820706 		beqz	a5,.L22
+ 258              	.L17:
+  46:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 259              		.loc 1 46 5
+  46:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 260              		.loc 1 46 43 is_stmt 0
+ 261 016c 97000000 		call	_ZN9Scheduler3getEv@plt
+ 261      E7800000 
+ 262              	.LVL24:
+  46:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 263              		.loc 1 46 27
+ 264 0174 97070000 		la	a5,_ZN12KernelThread7runningE
+ 264      83B70700 
+ 265 017c 23B0A700 		sd	a0,0(a5)
+  47:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+ 266              		.loc 1 47 5 is_stmt 1
+  47:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+ 267              		.loc 1 47 45 is_stmt 0
+ 268 0180 97070000 		la	a5,_ZN12KernelThread16timeSliceCounterE
+ 268      83B70700 
+ 269 0188 23B00700 		sd	zero,0(a5)
+  48:src/KernelSemaphore.cpp **** }
+ 270              		.loc 1 48 5 is_stmt 1
+  48:src/KernelSemaphore.cpp **** }
+ 271              		.loc 1 48 32 is_stmt 0
+ 272 018c 93058501 		addi	a1,a0,24
+ 273 0190 13858401 		addi	a0,s1,24
+ 274 0194 97000000 		call	_ZN12KernelThread13contextSwitchEPNS_7ContextES1_@plt
+ 274      E7800000 
+ 275              	.LVL25:
+  49:src/KernelSemaphore.cpp **** 
+ 276              		.loc 1 49 1
+ 277 019c 83308102 		ld	ra,40(sp)
+ 278              		.cfi_remember_state
+GAS LISTING /tmp/ccFFokii.s 			page 10
+
+
+ 279              		.cfi_restore 1
+ 280 01a0 03340102 		ld	s0,32(sp)
+ 281              		.cfi_restore 8
+ 282              		.cfi_def_cfa 2, 48
+ 283 01a4 83348101 		ld	s1,24(sp)
+ 284              		.cfi_restore 9
+ 285              	.LVL26:
+ 286 01a8 03390101 		ld	s2,16(sp)
+ 287              		.cfi_restore 18
+ 288              	.LVL27:
+ 289 01ac 83398100 		ld	s3,8(sp)
+ 290              		.cfi_restore 19
+ 291              	.LVL28:
+ 292 01b0 13010103 		addi	sp,sp,48
+ 293              		.cfi_def_cfa_offset 0
+ 294 01b4 67800000 		jr	ra
+ 295              	.LVL29:
+ 296              	.L21:
+ 297              		.cfi_restore_state
+  37:src/KernelSemaphore.cpp ****     } else {
+ 298              		.loc 1 37 9 is_stmt 1
+  37:src/KernelSemaphore.cpp ****     } else {
+ 299              		.loc 1 37 37 is_stmt 0
+ 300 01b8 2338A900 		sd	a0,16(s2)
+  37:src/KernelSemaphore.cpp ****     } else {
+ 301              		.loc 1 37 22
+ 302 01bc 2334A900 		sd	a0,8(s2)
+ 303 01c0 6FF0DFFA 		j	.L17
+ 304              	.L18:
+  39:src/KernelSemaphore.cpp ****         element->next = curr;
+ 305              		.loc 1 39 44 discriminator 2
+ 306 01c4 2334A900 		sd	a0,8(s2)
+ 307 01c8 6FF0DFF9 		j	.L19
+ 308              	.L22:
+  42:src/KernelSemaphore.cpp ****         }
+ 309              		.loc 1 42 13 is_stmt 1
+  42:src/KernelSemaphore.cpp ****         }
+ 310              		.loc 1 42 26 is_stmt 0
+ 311 01cc 2338A900 		sd	a0,16(s2)
+ 312 01d0 6FF0DFF9 		j	.L17
+ 313              		.cfi_endproc
+ 314              	.LFE14:
+ 316              		.align	2
+ 317              		.globl	_ZN15KernelSemaphore8doSwitchEP12KernelThread
+ 319              	_ZN15KernelSemaphore8doSwitchEP12KernelThread:
+ 320              	.LFB15:
+  51:src/KernelSemaphore.cpp ****     KernelThread::running = Scheduler::get();
+ 321              		.loc 1 51 51 is_stmt 1
+ 322              		.cfi_startproc
+ 323              	.LVL30:
+ 324 01d4 130101FE 		addi	sp,sp,-32
+ 325              		.cfi_def_cfa_offset 32
+ 326 01d8 233C1100 		sd	ra,24(sp)
+ 327 01dc 23388100 		sd	s0,16(sp)
+ 328 01e0 23349100 		sd	s1,8(sp)
+ 329              		.cfi_offset 1, -8
+ 330              		.cfi_offset 8, -16
+GAS LISTING /tmp/ccFFokii.s 			page 11
+
+
+ 331              		.cfi_offset 9, -24
+ 332 01e4 13040102 		addi	s0,sp,32
+ 333              		.cfi_def_cfa 8, 0
+ 334 01e8 93040500 		mv	s1,a0
+  52:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 335              		.loc 1 52 5
+  52:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 336              		.loc 1 52 43 is_stmt 0
+ 337 01ec 97000000 		call	_ZN9Scheduler3getEv@plt
+ 337      E7800000 
+ 338              	.LVL31:
+  52:src/KernelSemaphore.cpp ****     KernelThread::running->timeSliceCounter = 0;
+ 339              		.loc 1 52 27
+ 340 01f4 97070000 		la	a5,_ZN12KernelThread7runningE
+ 340      83B70700 
+ 341 01fc 23B0A700 		sd	a0,0(a5)
+  53:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+ 342              		.loc 1 53 5 is_stmt 1
+  53:src/KernelSemaphore.cpp ****     KernelThread::contextSwitch(&old->context, &KernelThread::running->context);
+ 343              		.loc 1 53 45 is_stmt 0
+ 344 0200 97070000 		la	a5,_ZN12KernelThread16timeSliceCounterE
+ 344      83B70700 
+ 345 0208 23B00700 		sd	zero,0(a5)
+  54:src/KernelSemaphore.cpp **** }
+ 346              		.loc 1 54 5 is_stmt 1
+  54:src/KernelSemaphore.cpp **** }
+ 347              		.loc 1 54 32 is_stmt 0
+ 348 020c 93058501 		addi	a1,a0,24
+ 349 0210 13858401 		addi	a0,s1,24
+ 350 0214 97000000 		call	_ZN12KernelThread13contextSwitchEPNS_7ContextES1_@plt
+ 350      E7800000 
+ 351              	.LVL32:
+  55:src/KernelSemaphore.cpp **** 
+ 352              		.loc 1 55 1
+ 353 021c 83308101 		ld	ra,24(sp)
+ 354              		.cfi_restore 1
+ 355 0220 03340101 		ld	s0,16(sp)
+ 356              		.cfi_restore 8
+ 357              		.cfi_def_cfa 2, 32
+ 358 0224 83348100 		ld	s1,8(sp)
+ 359              		.cfi_restore 9
+ 360              	.LVL33:
+ 361 0228 13010102 		addi	sp,sp,32
+ 362              		.cfi_def_cfa_offset 0
+ 363 022c 67800000 		jr	ra
+ 364              		.cfi_endproc
+ 365              	.LFE15:
+ 367              		.align	2
+ 368              		.globl	_ZN15KernelSemaphore6signalEv
+ 370              	_ZN15KernelSemaphore6signalEv:
+ 371              	.LFB17:
+  61:src/KernelSemaphore.cpp ****     if (closed) {
+ 372              		.loc 1 61 32 is_stmt 1
+ 373              		.cfi_startproc
+ 374              	.LVL34:
+  62:src/KernelSemaphore.cpp ****         KernelThread::running->interruptResult = SEMDEAD;
+ 375              		.loc 1 62 5
+GAS LISTING /tmp/ccFFokii.s 			page 12
+
+
+  62:src/KernelSemaphore.cpp ****         KernelThread::running->interruptResult = SEMDEAD;
+ 376              		.loc 1 62 9 is_stmt 0
+ 377 0230 8347C501 		lbu	a5,28(a0)
+ 378 0234 93F7F70F 		andi	a5,a5,0xff
+  62:src/KernelSemaphore.cpp ****         KernelThread::running->interruptResult = SEMDEAD;
+ 379              		.loc 1 62 5
+ 380 0238 638C0700 		beqz	a5,.L26
+  63:src/KernelSemaphore.cpp ****     }
+ 381              		.loc 1 63 9 is_stmt 1
+  63:src/KernelSemaphore.cpp ****     }
+ 382              		.loc 1 63 32 is_stmt 0
+ 383 023c 97070000 		la	a5,_ZN12KernelThread7runningE
+ 383      83B70700 
+ 384 0244 83B70700 		ld	a5,0(a5)
+  63:src/KernelSemaphore.cpp ****     }
+ 385              		.loc 1 63 48
+ 386 0248 1307F0FF 		li	a4,-1
+ 387 024c 23BCE702 		sd	a4,56(a5)
+ 388              	.L26:
+  65:src/KernelSemaphore.cpp ****         unblock();
+ 389              		.loc 1 65 5 is_stmt 1
+  65:src/KernelSemaphore.cpp ****         unblock();
+ 390              		.loc 1 65 11 is_stmt 0
+ 391 0250 83278501 		lw	a5,24(a0)
+  65:src/KernelSemaphore.cpp ****         unblock();
+ 392              		.loc 1 65 9
+ 393 0254 9B871700 		addiw	a5,a5,1
+ 394 0258 1B870700 		sext.w	a4,a5
+  65:src/KernelSemaphore.cpp ****         unblock();
+ 395              		.loc 1 65 17
+ 396 025c 232CF500 		sw	a5,24(a0)
+  65:src/KernelSemaphore.cpp ****         unblock();
+ 397              		.loc 1 65 5
+ 398 0260 6354E000 		blez	a4,.L32
+ 399 0264 67800000 		ret
+ 400              	.L32:
+  61:src/KernelSemaphore.cpp ****     if (closed) {
+ 401              		.loc 1 61 32
+ 402 0268 130101FF 		addi	sp,sp,-16
+ 403              		.cfi_def_cfa_offset 16
+ 404 026c 23341100 		sd	ra,8(sp)
+ 405 0270 23308100 		sd	s0,0(sp)
+ 406              		.cfi_offset 1, -8
+ 407              		.cfi_offset 8, -16
+ 408 0274 13040101 		addi	s0,sp,16
+ 409              		.cfi_def_cfa 8, 0
+  66:src/KernelSemaphore.cpp ****     }
+ 410              		.loc 1 66 9 is_stmt 1
+  66:src/KernelSemaphore.cpp ****     }
+ 411              		.loc 1 66 16 is_stmt 0
+ 412 0278 97000000 		call	_ZN15KernelSemaphore7unblockEv
+ 412      E7800000 
+ 413              	.LVL35:
+  68:src/KernelSemaphore.cpp **** 
+ 414              		.loc 1 68 1
+ 415 0280 83308100 		ld	ra,8(sp)
+ 416              		.cfi_restore 1
+GAS LISTING /tmp/ccFFokii.s 			page 13
+
+
+ 417 0284 03340100 		ld	s0,0(sp)
+ 418              		.cfi_restore 8
+ 419              		.cfi_def_cfa 2, 16
+ 420 0288 13010101 		addi	sp,sp,16
+ 421              		.cfi_def_cfa_offset 0
+ 422 028c 67800000 		jr	ra
+ 423              		.cfi_endproc
+ 424              	.LFE17:
+ 426              		.align	2
+ 427              		.globl	_ZN15KernelSemaphore9timedWaitEm
+ 429              	_ZN15KernelSemaphore9timedWaitEm:
+ 430              	.LFB18:
+  70:src/KernelSemaphore.cpp ****     if (--value < 0) {
+ 431              		.loc 1 70 46 is_stmt 1
+ 432              		.cfi_startproc
+ 433              	.LVL36:
+  71:src/KernelSemaphore.cpp ****         block(time);
+ 434              		.loc 1 71 5
+  71:src/KernelSemaphore.cpp ****         block(time);
+ 435              		.loc 1 71 11 is_stmt 0
+ 436 0290 83278501 		lw	a5,24(a0)
+  71:src/KernelSemaphore.cpp ****         block(time);
+ 437              		.loc 1 71 9
+ 438 0294 9B87F7FF 		addiw	a5,a5,-1
+  71:src/KernelSemaphore.cpp ****         block(time);
+ 439              		.loc 1 71 17
+ 440 0298 232CF500 		sw	a5,24(a0)
+  71:src/KernelSemaphore.cpp ****         block(time);
+ 441              		.loc 1 71 5
+ 442 029c 13970702 		slli	a4,a5,32
+ 443 02a0 63440700 		bltz	a4,.L39
+ 444 02a4 67800000 		ret
+ 445              	.L39:
+  70:src/KernelSemaphore.cpp ****     if (--value < 0) {
+ 446              		.loc 1 70 46
+ 447 02a8 130101FF 		addi	sp,sp,-16
+ 448              		.cfi_def_cfa_offset 16
+ 449 02ac 23341100 		sd	ra,8(sp)
+ 450 02b0 23308100 		sd	s0,0(sp)
+ 451              		.cfi_offset 1, -8
+ 452              		.cfi_offset 8, -16
+ 453 02b4 13040101 		addi	s0,sp,16
+ 454              		.cfi_def_cfa 8, 0
+  72:src/KernelSemaphore.cpp ****     }
+ 455              		.loc 1 72 9 is_stmt 1
+  72:src/KernelSemaphore.cpp ****     }
+ 456              		.loc 1 72 14 is_stmt 0
+ 457 02b8 97000000 		call	_ZN15KernelSemaphore5blockEm
+ 457      E7800000 
+ 458              	.LVL37:
+  74:src/KernelSemaphore.cpp **** 
+ 459              		.loc 1 74 1
+ 460 02c0 83308100 		ld	ra,8(sp)
+ 461              		.cfi_restore 1
+ 462 02c4 03340100 		ld	s0,0(sp)
+ 463              		.cfi_restore 8
+ 464              		.cfi_def_cfa 2, 16
+GAS LISTING /tmp/ccFFokii.s 			page 14
+
+
+ 465 02c8 13010101 		addi	sp,sp,16
+ 466              		.cfi_def_cfa_offset 0
+ 467 02cc 67800000 		jr	ra
+ 468              		.cfi_endproc
+ 469              	.LFE18:
+ 471              		.align	2
+ 472              		.globl	_ZN15KernelSemaphore4waitEv
+ 474              	_ZN15KernelSemaphore4waitEv:
+ 475              	.LFB16:
+  57:src/KernelSemaphore.cpp ****     timedWait(INFINITY);
+ 476              		.loc 1 57 30 is_stmt 1
+ 477              		.cfi_startproc
+ 478              	.LVL38:
+ 479 02d0 130101FF 		addi	sp,sp,-16
+ 480              		.cfi_def_cfa_offset 16
+ 481 02d4 23341100 		sd	ra,8(sp)
+ 482 02d8 23308100 		sd	s0,0(sp)
+ 483              		.cfi_offset 1, -8
+ 484              		.cfi_offset 8, -16
+ 485 02dc 13040101 		addi	s0,sp,16
+ 486              		.cfi_def_cfa 8, 0
+  58:src/KernelSemaphore.cpp **** }
+ 487              		.loc 1 58 5
+  58:src/KernelSemaphore.cpp **** }
+ 488              		.loc 1 58 14 is_stmt 0
+ 489 02e0 9305F0FF 		li	a1,-1
+ 490 02e4 9395F503 		slli	a1,a1,63
+ 491 02e8 97000000 		call	_ZN15KernelSemaphore9timedWaitEm
+ 491      E7800000 
+ 492              	.LVL39:
+  59:src/KernelSemaphore.cpp **** 
+ 493              		.loc 1 59 1
+ 494 02f0 83308100 		ld	ra,8(sp)
+ 495              		.cfi_restore 1
+ 496 02f4 03340100 		ld	s0,0(sp)
+ 497              		.cfi_restore 8
+ 498              		.cfi_def_cfa 2, 16
+ 499 02f8 13010101 		addi	sp,sp,16
+ 500              		.cfi_def_cfa_offset 0
+ 501 02fc 67800000 		jr	ra
+ 502              		.cfi_endproc
+ 503              	.LFE16:
+ 505              		.align	2
+ 506              		.globl	_ZN15KernelSemaphore7tryWaitEv
+ 508              	_ZN15KernelSemaphore7tryWaitEv:
+ 509              	.LFB19:
+  76:src/KernelSemaphore.cpp ****     if (closed) {
+ 510              		.loc 1 76 32 is_stmt 1
+ 511              		.cfi_startproc
+ 512              	.LVL40:
+ 513 0300 130101FF 		addi	sp,sp,-16
+ 514              		.cfi_def_cfa_offset 16
+ 515 0304 23348100 		sd	s0,8(sp)
+ 516              		.cfi_offset 8, -8
+ 517 0308 13040101 		addi	s0,sp,16
+ 518              		.cfi_def_cfa 8, 0
+  77:src/KernelSemaphore.cpp ****         return SEMDEAD;
+GAS LISTING /tmp/ccFFokii.s 			page 15
+
+
+ 519              		.loc 1 77 5
+  77:src/KernelSemaphore.cpp ****         return SEMDEAD;
+ 520              		.loc 1 77 9 is_stmt 0
+ 521 030c 8347C501 		lbu	a5,28(a0)
+ 522 0310 93F7F70F 		andi	a5,a5,0xff
+  77:src/KernelSemaphore.cpp ****         return SEMDEAD;
+ 523              		.loc 1 77 5
+ 524 0314 639A0702 		bnez	a5,.L44
+  80:src/KernelSemaphore.cpp ****         --value;
+ 525              		.loc 1 80 5 is_stmt 1
+  80:src/KernelSemaphore.cpp ****         --value;
+ 526              		.loc 1 80 9 is_stmt 0
+ 527 0318 83278501 		lw	a5,24(a0)
+ 528 031c 9B870700 		sext.w	a5,a5
+  80:src/KernelSemaphore.cpp ****         --value;
+ 529              		.loc 1 80 5
+ 530 0320 634AF000 		bgtz	a5,.L47
+  84:src/KernelSemaphore.cpp **** }
+ 531              		.loc 1 84 12
+ 532 0324 13050000 		li	a0,0
+ 533              	.LVL41:
+ 534              	.L43:
+  85:src/KernelSemaphore.cpp **** 
+ 535              		.loc 1 85 1
+ 536 0328 03348100 		ld	s0,8(sp)
+ 537              		.cfi_remember_state
+ 538              		.cfi_restore 8
+ 539              		.cfi_def_cfa 2, 16
+ 540 032c 13010101 		addi	sp,sp,16
+ 541              		.cfi_def_cfa_offset 0
+ 542 0330 67800000 		jr	ra
+ 543              	.LVL42:
+ 544              	.L47:
+ 545              		.cfi_restore_state
+  81:src/KernelSemaphore.cpp ****         return UNLOCKED;
+ 546              		.loc 1 81 9 is_stmt 1
+  81:src/KernelSemaphore.cpp ****         return UNLOCKED;
+ 547              		.loc 1 81 11 is_stmt 0
+ 548 0334 83278501 		lw	a5,24(a0)
+  81:src/KernelSemaphore.cpp ****         return UNLOCKED;
+ 549              		.loc 1 81 9
+ 550 0338 9B87F7FF 		addiw	a5,a5,-1
+ 551 033c 232CF500 		sw	a5,24(a0)
+  82:src/KernelSemaphore.cpp ****     }
+ 552              		.loc 1 82 9 is_stmt 1
+  82:src/KernelSemaphore.cpp ****     }
+ 553              		.loc 1 82 16 is_stmt 0
+ 554 0340 13051000 		li	a0,1
+ 555              	.LVL43:
+ 556 0344 6FF05FFE 		j	.L43
+ 557              	.LVL44:
+ 558              	.L44:
+  78:src/KernelSemaphore.cpp ****     }
+ 559              		.loc 1 78 16
+ 560 0348 1305F0FF 		li	a0,-1
+ 561              	.LVL45:
+ 562 034c 6FF0DFFD 		j	.L43
+GAS LISTING /tmp/ccFFokii.s 			page 16
+
+
+ 563              		.cfi_endproc
+ 564              	.LFE19:
+ 566              		.align	2
+ 567              		.globl	_ZNK15KernelSemaphore8getValueEv
+ 569              	_ZNK15KernelSemaphore8getValueEv:
+ 570              	.LFB20:
+  87:src/KernelSemaphore.cpp ****     return value;
+ 571              		.loc 1 87 39 is_stmt 1
+ 572              		.cfi_startproc
+ 573              	.LVL46:
+ 574 0350 130101FF 		addi	sp,sp,-16
+ 575              		.cfi_def_cfa_offset 16
+ 576 0354 23348100 		sd	s0,8(sp)
+ 577              		.cfi_offset 8, -8
+ 578 0358 13040101 		addi	s0,sp,16
+ 579              		.cfi_def_cfa 8, 0
+  88:src/KernelSemaphore.cpp **** }
+ 580              		.loc 1 88 5
+  88:src/KernelSemaphore.cpp **** }
+ 581              		.loc 1 88 12 is_stmt 0
+ 582 035c 03258501 		lw	a0,24(a0)
+ 583              	.LVL47:
+  89:src/KernelSemaphore.cpp **** 
+ 584              		.loc 1 89 1
+ 585 0360 1B050500 		sext.w	a0,a0
+ 586 0364 03348100 		ld	s0,8(sp)
+ 587              		.cfi_restore 8
+ 588              		.cfi_def_cfa 2, 16
+ 589 0368 13010101 		addi	sp,sp,16
+ 590              		.cfi_def_cfa_offset 0
+ 591 036c 67800000 		jr	ra
+ 592              		.cfi_endproc
+ 593              	.LFE20:
+ 595              		.align	2
+ 596              		.globl	_ZNK15KernelSemaphore8isClosedEv
+ 598              	_ZNK15KernelSemaphore8isClosedEv:
+ 599              	.LFB21:
+  91:src/KernelSemaphore.cpp ****     return closed;
+ 600              		.loc 1 91 40 is_stmt 1
+ 601              		.cfi_startproc
+ 602              	.LVL48:
+ 603 0370 130101FF 		addi	sp,sp,-16
+ 604              		.cfi_def_cfa_offset 16
+ 605 0374 23348100 		sd	s0,8(sp)
+ 606              		.cfi_offset 8, -8
+ 607 0378 13040101 		addi	s0,sp,16
+ 608              		.cfi_def_cfa 8, 0
+  92:src/KernelSemaphore.cpp **** }
+ 609              		.loc 1 92 5
+  92:src/KernelSemaphore.cpp **** }
+ 610              		.loc 1 92 12 is_stmt 0
+ 611 037c 0345C501 		lbu	a0,28(a0)
+ 612              	.LVL49:
+  93:src/KernelSemaphore.cpp **** 
+ 613              		.loc 1 93 1
+ 614 0380 1375F50F 		andi	a0,a0,0xff
+ 615 0384 03348100 		ld	s0,8(sp)
+GAS LISTING /tmp/ccFFokii.s 			page 17
+
+
+ 616              		.cfi_restore 8
+ 617              		.cfi_def_cfa 2, 16
+ 618 0388 13010101 		addi	sp,sp,16
+ 619              		.cfi_def_cfa_offset 0
+ 620 038c 67800000 		jr	ra
+ 621              		.cfi_endproc
+ 622              	.LFE21:
+ 624              		.align	2
+ 625              		.globl	_ZN15KernelSemaphore5closeEv
+ 627              	_ZN15KernelSemaphore5closeEv:
+ 628              	.LFB22:
+  95:src/KernelSemaphore.cpp ****     closed = true;
+ 629              		.loc 1 95 31 is_stmt 1
+ 630              		.cfi_startproc
+ 631              	.LVL50:
+ 632 0390 130101FE 		addi	sp,sp,-32
+ 633              		.cfi_def_cfa_offset 32
+ 634 0394 233C1100 		sd	ra,24(sp)
+ 635 0398 23388100 		sd	s0,16(sp)
+ 636 039c 23349100 		sd	s1,8(sp)
+ 637              		.cfi_offset 1, -8
+ 638              		.cfi_offset 8, -16
+ 639              		.cfi_offset 9, -24
+ 640 03a0 13040102 		addi	s0,sp,32
+ 641              		.cfi_def_cfa 8, 0
+ 642 03a4 93040500 		mv	s1,a0
+  96:src/KernelSemaphore.cpp ****     while (!blocked.isEmpty()) {
+ 643              		.loc 1 96 5
+  96:src/KernelSemaphore.cpp ****     while (!blocked.isEmpty()) {
+ 644              		.loc 1 96 12 is_stmt 0
+ 645 03a8 93071000 		li	a5,1
+ 646 03ac 230EF500 		sb	a5,28(a0)
+ 647              	.LVL51:
+ 648              	.L54:
+  97:src/KernelSemaphore.cpp ****         unblock();
+ 649              		.loc 1 97 5 is_stmt 1
+  97:src/KernelSemaphore.cpp ****         unblock();
+ 650              		.loc 1 97 12
+ 651              	.LBB47:
+ 652              	.LBB48:
+  52:src/../h/../h/List.hpp ****         return result;
+  53:src/../h/../h/List.hpp ****     }
+  54:src/../h/../h/List.hpp **** 
+  55:src/../h/../h/List.hpp ****     T *peekFirst() {
+  56:src/../h/../h/List.hpp ****         if (!head) {
+  57:src/../h/../h/List.hpp ****             return 0;
+  58:src/../h/../h/List.hpp ****         }
+  59:src/../h/../h/List.hpp ****         return head->data;
+  60:src/../h/../h/List.hpp ****     }
+  61:src/../h/../h/List.hpp **** 
+  62:src/../h/../h/List.hpp ****     T *removeLast() {
+  63:src/../h/../h/List.hpp ****         if (!head) {
+  64:src/../h/../h/List.hpp ****             return 0;
+  65:src/../h/../h/List.hpp ****         }
+  66:src/../h/../h/List.hpp ****         Element *previous = 0;
+  67:src/../h/../h/List.hpp ****         for (Element *current = head; current && current != tail; current = current->next) {
+  68:src/../h/../h/List.hpp ****             previous = current;
+GAS LISTING /tmp/ccFFokii.s 			page 18
+
+
+  69:src/../h/../h/List.hpp ****         }
+  70:src/../h/../h/List.hpp ****         Element *element = tail;
+  71:src/../h/../h/List.hpp ****         if (previous) {
+  72:src/../h/../h/List.hpp ****             previous->next = 0;
+  73:src/../h/../h/List.hpp ****         }
+  74:src/../h/../h/List.hpp ****         else {
+  75:src/../h/../h/List.hpp ****             head = 0;
+  76:src/../h/../h/List.hpp ****         }
+  77:src/../h/../h/List.hpp ****         tail = previous;
+  78:src/../h/../h/List.hpp ****         T *result = element->data;
+  79:src/../h/../h/List.hpp ****         delete element;
+  80:src/../h/../h/List.hpp ****         return result;
+  81:src/../h/../h/List.hpp ****     }
+  82:src/../h/../h/List.hpp **** 
+  83:src/../h/../h/List.hpp ****     T *peekLast() {
+  84:src/../h/../h/List.hpp ****         if (!tail) {
+  85:src/../h/../h/List.hpp ****             return 0;
+  86:src/../h/../h/List.hpp ****         }
+  87:src/../h/../h/List.hpp ****         return tail->data;
+  88:src/../h/../h/List.hpp ****     }
+  89:src/../h/../h/List.hpp **** 
+  90:src/../h/../h/List.hpp ****     bool isEmpty() const {
+  91:src/../h/../h/List.hpp ****         return head == nullptr;
+ 653              		.loc 2 91 16 is_stmt 0
+ 654 03b0 03B78400 		ld	a4,8(s1)
+ 655              	.LVL52:
+ 656              	.LBE48:
+ 657              	.LBE47:
+  97:src/KernelSemaphore.cpp ****         unblock();
+ 658              		.loc 1 97 12
+ 659 03b4 630A0700 		beqz	a4,.L53
+  98:src/KernelSemaphore.cpp ****     }
+ 660              		.loc 1 98 9 is_stmt 1
+  98:src/KernelSemaphore.cpp ****     }
+ 661              		.loc 1 98 16 is_stmt 0
+ 662 03b8 13850400 		mv	a0,s1
+ 663 03bc 97000000 		call	_ZN15KernelSemaphore7unblockEv
+ 663      E7800000 
+ 664              	.LVL53:
+  97:src/KernelSemaphore.cpp ****         unblock();
+ 665              		.loc 1 97 5
+ 666 03c4 6FF0DFFE 		j	.L54
+ 667              	.L53:
+ 100:src/KernelSemaphore.cpp **** }
+ 668              		.loc 1 100 5 is_stmt 1
+ 669              	.LVL54:
+ 670              	.LBB49:
+ 671              	.LBB50:
+  92:src/../h/../h/List.hpp ****     }
+  93:src/../h/../h/List.hpp **** 
+  94:src/../h/../h/List.hpp ****     void removeFromList(const T *data) {
+  95:src/../h/../h/List.hpp ****         Element *prev = nullptr, *curr = head;
+ 672              		.loc 2 95 35 is_stmt 0
+ 673 03c8 97070000 		ld	a5,.LANCHOR0
+ 673      83B70700 
+ 674              	.LVL55:
+ 675 03d0 6F004001 		j	.L58
+GAS LISTING /tmp/ccFFokii.s 			page 19
+
+
+ 676              	.LVL56:
+ 677              	.L61:
+  96:src/../h/../h/List.hpp ****         while (curr) {
+  97:src/../h/../h/List.hpp ****             if (curr->data == data) {
+  98:src/../h/../h/List.hpp ****                 (prev ? prev->next : head) = curr->next;
+ 678              		.loc 2 98 44
+ 679 03d4 63020702 		beqz	a4,.L57
+ 680              		.loc 2 98 52
+ 681 03d8 83B68700 		ld	a3,8(a5)
+ 682              		.loc 2 98 44
+ 683 03dc 2334D700 		sd	a3,8(a4)
+ 684              	.LVL57:
+ 685              	.L56:
+  99:src/../h/../h/List.hpp ****             } else {
+ 100:src/../h/../h/List.hpp ****                 prev = curr;
+ 101:src/../h/../h/List.hpp ****             }
+ 102:src/../h/../h/List.hpp ****             curr = curr->next;
+ 686              		.loc 2 102 13
+ 687 03e0 83B78700 		ld	a5,8(a5)
+ 688              	.LVL58:
+ 689              	.L58:
+  96:src/../h/../h/List.hpp ****         while (curr) {
+ 690              		.loc 2 96 9 is_stmt 1
+ 691 03e4 63820702 		beqz	a5,.L52
+  97:src/../h/../h/List.hpp ****                 (prev ? prev->next : head) = curr->next;
+ 692              		.loc 2 97 23 is_stmt 0
+ 693 03e8 83B60700 		ld	a3,0(a5)
+  97:src/../h/../h/List.hpp ****                 (prev ? prev->next : head) = curr->next;
+ 694              		.loc 2 97 13
+ 695 03ec E384D4FE 		beq	s1,a3,.L61
+ 100:src/../h/../h/List.hpp ****             }
+ 696              		.loc 2 100 17
+ 697 03f0 13870700 		mv	a4,a5
+ 698              	.LVL59:
+ 699 03f4 6FF0DFFE 		j	.L56
+ 700              	.LVL60:
+ 701              	.L57:
+  98:src/../h/../h/List.hpp ****             } else {
+ 702              		.loc 2 98 52
+ 703 03f8 83B68700 		ld	a3,8(a5)
+  98:src/../h/../h/List.hpp ****             } else {
+ 704              		.loc 2 98 44
+ 705 03fc 17060000 		sd	a3,.LANCHOR0,a2
+ 705      2330D600 
+ 706 0404 6FF0DFFD 		j	.L56
+ 707              	.L52:
+ 708              	.LBE50:
+ 709              	.LBE49:
+ 101:src/KernelSemaphore.cpp **** 
+ 710              		.loc 1 101 1
+ 711 0408 83308101 		ld	ra,24(sp)
+ 712              		.cfi_restore 1
+ 713 040c 03340101 		ld	s0,16(sp)
+ 714              		.cfi_restore 8
+ 715              		.cfi_def_cfa 2, 32
+ 716 0410 83348100 		ld	s1,8(sp)
+ 717              		.cfi_restore 9
+GAS LISTING /tmp/ccFFokii.s 			page 20
+
+
+ 718              	.LVL61:
+ 719 0414 13010102 		addi	sp,sp,32
+ 720              		.cfi_def_cfa_offset 0
+ 721 0418 67800000 		jr	ra
+ 722              		.cfi_endproc
+ 723              	.LFE22:
+ 725              		.align	2
+ 726              		.globl	_ZN15KernelSemaphore18updateIndividuallyEv
+ 728              	_ZN15KernelSemaphore18updateIndividuallyEv:
+ 729              	.LFB24:
+ 110:src/KernelSemaphore.cpp ****     while (!blocked.isEmpty() && blocked.peekFirst()->whenFinished <= Timer::now()) {
+ 730              		.loc 1 110 44 is_stmt 1
+ 731              		.cfi_startproc
+ 732              	.LVL62:
+ 733 041c 130101FE 		addi	sp,sp,-32
+ 734              		.cfi_def_cfa_offset 32
+ 735 0420 233C1100 		sd	ra,24(sp)
+ 736 0424 23388100 		sd	s0,16(sp)
+ 737 0428 23349100 		sd	s1,8(sp)
+ 738 042c 23302101 		sd	s2,0(sp)
+ 739              		.cfi_offset 1, -8
+ 740              		.cfi_offset 8, -16
+ 741              		.cfi_offset 9, -24
+ 742              		.cfi_offset 18, -32
+ 743 0430 13040102 		addi	s0,sp,32
+ 744              		.cfi_def_cfa 8, 0
+ 745 0434 93040500 		mv	s1,a0
+ 746 0438 6F008001 		j	.L67
+ 747              	.LVL63:
+ 748              	.L65:
+ 112:src/KernelSemaphore.cpp ****         unblock();
+ 749              		.loc 1 112 46 is_stmt 0
+ 750 043c 1307E0FF 		li	a4,-2
+ 751 0440 23BCE702 		sd	a4,56(a5)
+ 113:src/KernelSemaphore.cpp ****     }
+ 752              		.loc 1 113 9 is_stmt 1
+ 113:src/KernelSemaphore.cpp ****     }
+ 753              		.loc 1 113 16 is_stmt 0
+ 754 0444 13850400 		mv	a0,s1
+ 755 0448 97000000 		call	_ZN15KernelSemaphore7unblockEv
+ 755      E7800000 
+ 756              	.LVL64:
+ 757              	.L67:
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 758              		.loc 1 111 5 is_stmt 1
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 759              		.loc 1 111 31
+ 760              	.LBB51:
+ 761              	.LBB52:
+  91:src/../h/../h/List.hpp ****     }
+ 762              		.loc 2 91 16 is_stmt 0
+ 763 0450 83B78400 		ld	a5,8(s1)
+ 764              	.LVL65:
+ 765              	.LBE52:
+ 766              	.LBE51:
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 767              		.loc 1 111 31
+GAS LISTING /tmp/ccFFokii.s 			page 21
+
+
+ 768 0454 63860702 		beqz	a5,.L62
+ 769              	.LVL66:
+ 770              	.LBB53:
+ 771              	.LBB54:
+  56:src/../h/../h/List.hpp ****             return 0;
+ 772              		.loc 2 56 9 discriminator 1
+ 773 0458 63840700 		beqz	a5,.L64
+  59:src/../h/../h/List.hpp ****     }
+ 774              		.loc 2 59 22
+ 775 045c 83B70700 		ld	a5,0(a5)
+ 776              	.L64:
+ 777              	.LVL67:
+ 778              	.LBE54:
+ 779              	.LBE53:
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 780              		.loc 1 111 55
+ 781 0460 03B90703 		ld	s2,48(a5)
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 782              		.loc 1 111 81
+ 783 0464 97000000 		call	_ZN5Timer3nowEv@plt
+ 783      E7800000 
+ 784              	.LVL68:
+ 111:src/KernelSemaphore.cpp ****         blocked.peekFirst()->interruptResult = TIMEOUT;
+ 785              		.loc 1 111 31
+ 786 046c 636A2501 		bgtu	s2,a0,.L62
+ 112:src/KernelSemaphore.cpp ****         unblock();
+ 787              		.loc 1 112 9 is_stmt 1
+ 788              	.LVL69:
+ 789              	.LBB55:
+ 790              	.LBB56:
+  56:src/../h/../h/List.hpp ****             return 0;
+ 791              		.loc 2 56 14 is_stmt 0
+ 792 0470 83B78400 		ld	a5,8(s1)
+  56:src/../h/../h/List.hpp ****             return 0;
+ 793              		.loc 2 56 9
+ 794 0474 E38407FC 		beqz	a5,.L65
+  59:src/../h/../h/List.hpp ****     }
+ 795              		.loc 2 59 22
+ 796 0478 83B70700 		ld	a5,0(a5)
+ 797 047c 6FF01FFC 		j	.L65
+ 798              	.LVL70:
+ 799              	.L62:
+ 800              	.LBE56:
+ 801              	.LBE55:
+ 115:src/KernelSemaphore.cpp **** 
+ 802              		.loc 1 115 1
+ 803 0480 83308101 		ld	ra,24(sp)
+ 804              		.cfi_restore 1
+ 805 0484 03340101 		ld	s0,16(sp)
+ 806              		.cfi_restore 8
+ 807              		.cfi_def_cfa 2, 32
+ 808 0488 83348100 		ld	s1,8(sp)
+ 809              		.cfi_restore 9
+ 810              	.LVL71:
+ 811 048c 03390100 		ld	s2,0(sp)
+ 812              		.cfi_restore 18
+ 813 0490 13010102 		addi	sp,sp,32
+GAS LISTING /tmp/ccFFokii.s 			page 22
+
+
+ 814              		.cfi_def_cfa_offset 0
+ 815 0494 67800000 		jr	ra
+ 816              		.cfi_endproc
+ 817              	.LFE24:
+ 819              		.align	2
+ 820              		.globl	_ZN15KernelSemaphore6updateEv
+ 822              	_ZN15KernelSemaphore6updateEv:
+ 823              	.LFB23:
+ 104:src/KernelSemaphore.cpp ****     for (auto *curr = declaredSemaphores.head; curr; curr = curr->next) {
+ 824              		.loc 1 104 32 is_stmt 1
+ 825              		.cfi_startproc
+ 826 0498 130101FE 		addi	sp,sp,-32
+ 827              		.cfi_def_cfa_offset 32
+ 828 049c 233C1100 		sd	ra,24(sp)
+ 829 04a0 23388100 		sd	s0,16(sp)
+ 830 04a4 23349100 		sd	s1,8(sp)
+ 831              		.cfi_offset 1, -8
+ 832              		.cfi_offset 8, -16
+ 833              		.cfi_offset 9, -24
+ 834 04a8 13040102 		addi	s0,sp,32
+ 835              		.cfi_def_cfa 8, 0
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 836              		.loc 1 105 5
+ 837              	.LBB57:
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 838              		.loc 1 105 16 is_stmt 0
+ 839 04ac 97040000 		ld	s1,.LANCHOR0
+ 839      83B40400 
+ 840              	.LVL72:
+ 841              	.L71:
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 842              		.loc 1 105 48 is_stmt 1 discriminator 3
+ 843 04b4 638C0400 		beqz	s1,.L69
+ 106:src/KernelSemaphore.cpp ****     }
+ 844              		.loc 1 106 9 discriminator 2
+ 106:src/KernelSemaphore.cpp ****     }
+ 845              		.loc 1 106 39 is_stmt 0 discriminator 2
+ 846 04b8 03B50400 		ld	a0,0(s1)
+ 847 04bc 97000000 		call	_ZN15KernelSemaphore18updateIndividuallyEv
+ 847      E7800000 
+ 848              	.LVL73:
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 849              		.loc 1 105 5 is_stmt 1 discriminator 2
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 850              		.loc 1 105 59 is_stmt 0 discriminator 2
+ 851 04c4 83B48400 		ld	s1,8(s1)
+ 852              	.LVL74:
+ 105:src/KernelSemaphore.cpp ****         curr->data->updateIndividually();
+ 853              		.loc 1 105 5 discriminator 2
+ 854 04c8 6FF0DFFE 		j	.L71
+ 855              	.L69:
+ 856              	.LBE57:
+ 108:src/KernelSemaphore.cpp **** 
+ 857              		.loc 1 108 1
+ 858 04cc 83308101 		ld	ra,24(sp)
+ 859              		.cfi_restore 1
+ 860 04d0 03340101 		ld	s0,16(sp)
+GAS LISTING /tmp/ccFFokii.s 			page 23
+
+
+ 861              		.cfi_restore 8
+ 862              		.cfi_def_cfa 2, 32
+ 863 04d4 83348100 		ld	s1,8(sp)
+ 864              		.cfi_restore 9
+ 865              	.LVL75:
+ 866 04d8 13010102 		addi	sp,sp,32
+ 867              		.cfi_def_cfa_offset 0
+ 868 04dc 67800000 		jr	ra
+ 869              		.cfi_endproc
+ 870              	.LFE23:
+ 872              		.align	2
+ 873              		.globl	_ZN15KernelSemaphore21createKernelSemaphoreEm
+ 875              	_ZN15KernelSemaphore21createKernelSemaphoreEm:
+ 876              	.LFB25:
+ 117:src/KernelSemaphore.cpp ****     KernelSemaphore *handle = new KernelSemaphore(value);
+ 877              		.loc 1 117 71 is_stmt 1
+ 878              		.cfi_startproc
+ 879              	.LVL76:
+ 880 04e0 130101FE 		addi	sp,sp,-32
+ 881              		.cfi_def_cfa_offset 32
+ 882 04e4 233C1100 		sd	ra,24(sp)
+ 883 04e8 23388100 		sd	s0,16(sp)
+ 884 04ec 23349100 		sd	s1,8(sp)
+ 885 04f0 23302101 		sd	s2,0(sp)
+ 886              		.cfi_offset 1, -8
+ 887              		.cfi_offset 8, -16
+ 888              		.cfi_offset 9, -24
+ 889              		.cfi_offset 18, -32
+ 890 04f4 13040102 		addi	s0,sp,32
+ 891              		.cfi_def_cfa 8, 0
+ 892 04f8 13090500 		mv	s2,a0
+ 118:src/KernelSemaphore.cpp ****     declaredSemaphores.enqueue(handle);
+ 893              		.loc 1 118 5
+ 118:src/KernelSemaphore.cpp ****     declaredSemaphores.enqueue(handle);
+ 894              		.loc 1 118 56 is_stmt 0
+ 895 04fc 13050002 		li	a0,32
+ 896              	.LVL77:
+ 897 0500 97000000 		call	_ZN11KernelClassnwEm@plt
+ 897      E7800000 
+ 898              	.LVL78:
+ 899 0508 93040500 		mv	s1,a0
+ 900              	.LVL79:
+ 901              	.LBB58:
+ 902              	.LBB59:
+ 903              	.LBB60:
+ 904              	.LBB61:
+  18:src/../h/../h/List.hpp **** 
+ 905              		.loc 2 18 29
+ 906 050c 23340500 		sd	zero,8(a0)
+ 907 0510 23380500 		sd	zero,16(a0)
+ 908              	.LVL80:
+ 909              	.LBE61:
+ 910              	.LBE60:
+ 911              		.file 3 "src/../h/KernelSemaphore.hpp"
+   1:src/../h/KernelSemaphore.hpp **** #ifndef NOVI_PROJEKAT_KERNELSEMAPHORE_HPP
+   2:src/../h/KernelSemaphore.hpp **** #define NOVI_PROJEKAT_KERNELSEMAPHORE_HPP
+   3:src/../h/KernelSemaphore.hpp **** 
+GAS LISTING /tmp/ccFFokii.s 			page 24
+
+
+   4:src/../h/KernelSemaphore.hpp **** #include "../h/List.hpp"
+   5:src/../h/KernelSemaphore.hpp **** 
+   6:src/../h/KernelSemaphore.hpp **** class KernelThread;
+   7:src/../h/KernelSemaphore.hpp **** 
+   8:src/../h/KernelSemaphore.hpp **** class KernelSemaphore : public KernelClass {
+   9:src/../h/KernelSemaphore.hpp **** public:
+  10:src/../h/KernelSemaphore.hpp ****     enum Signal {
+  11:src/../h/KernelSemaphore.hpp ****         UNLOCKED = 1,
+  12:src/../h/KernelSemaphore.hpp ****         SUCCESS = 0,
+  13:src/../h/KernelSemaphore.hpp ****         SEMDEAD = -1,
+  14:src/../h/KernelSemaphore.hpp ****         TIMEOUT = -2
+  15:src/../h/KernelSemaphore.hpp ****     };
+  16:src/../h/KernelSemaphore.hpp **** 
+  17:src/../h/KernelSemaphore.hpp ****     /**
+  18:src/../h/KernelSemaphore.hpp ****      * @brief Decrements the semaphore value and potentially blocks the calling thread.
+  19:src/../h/KernelSemaphore.hpp ****      */
+  20:src/../h/KernelSemaphore.hpp ****     void wait();
+  21:src/../h/KernelSemaphore.hpp **** 
+  22:src/../h/KernelSemaphore.hpp ****     /**
+  23:src/../h/KernelSemaphore.hpp ****      * @brief Increments the semaphore value and potentially unblocks a waiting thread.
+  24:src/../h/KernelSemaphore.hpp ****      */
+  25:src/../h/KernelSemaphore.hpp ****     void signal();
+  26:src/../h/KernelSemaphore.hpp **** 
+  27:src/../h/KernelSemaphore.hpp ****     /**
+  28:src/../h/KernelSemaphore.hpp ****      * @brief Decrements the semaphore value and potentially blocks the calling thread with a timeo
+  29:src/../h/KernelSemaphore.hpp ****      * @param time Time to wait before timing out.
+  30:src/../h/KernelSemaphore.hpp ****      */
+  31:src/../h/KernelSemaphore.hpp ****     void timedWait(time_t time);
+  32:src/../h/KernelSemaphore.hpp **** 
+  33:src/../h/KernelSemaphore.hpp ****     /**
+  34:src/../h/KernelSemaphore.hpp ****      * @brief Tries to decrement the semaphore value without blocking.
+  35:src/../h/KernelSemaphore.hpp ****      * @return Signal Result of the try wait operation.
+  36:src/../h/KernelSemaphore.hpp ****      */
+  37:src/../h/KernelSemaphore.hpp ****     int tryWait();
+  38:src/../h/KernelSemaphore.hpp **** 
+  39:src/../h/KernelSemaphore.hpp ****     int getValue() const;
+  40:src/../h/KernelSemaphore.hpp **** 
+  41:src/../h/KernelSemaphore.hpp ****     /**
+  42:src/../h/KernelSemaphore.hpp ****      * @brief Closes the semaphore, unblocking all waiting threads.
+  43:src/../h/KernelSemaphore.hpp ****      * @return Signal Result of the close operation.
+  44:src/../h/KernelSemaphore.hpp ****      */
+  45:src/../h/KernelSemaphore.hpp ****     void close();
+  46:src/../h/KernelSemaphore.hpp **** 
+  47:src/../h/KernelSemaphore.hpp ****     bool isClosed() const;
+  48:src/../h/KernelSemaphore.hpp **** 
+  49:src/../h/KernelSemaphore.hpp ****     static KernelSemaphore *createKernelSemaphore(uint64 value);
+  50:src/../h/KernelSemaphore.hpp **** 
+  51:src/../h/KernelSemaphore.hpp ****     static void update();
+  52:src/../h/KernelSemaphore.hpp **** protected:
+  53:src/../h/KernelSemaphore.hpp ****     void block(time_t time);
+  54:src/../h/KernelSemaphore.hpp ****     void unblock();
+  55:src/../h/KernelSemaphore.hpp **** private:
+  56:src/../h/KernelSemaphore.hpp ****     List<KernelThread> blocked;
+  57:src/../h/KernelSemaphore.hpp ****     volatile int value;
+  58:src/../h/KernelSemaphore.hpp ****     volatile bool closed;
+  59:src/../h/KernelSemaphore.hpp **** 
+  60:src/../h/KernelSemaphore.hpp ****     KernelSemaphore(uint64 value = 1) : value((int) value), closed(false) {}
+GAS LISTING /tmp/ccFFokii.s 			page 25
+
+
+ 912              		.loc 3 60 73
+ 913 0514 1B090900 		sext.w	s2,s2
+ 914              	.LVL81:
+ 915 0518 232C2501 		sw	s2,24(a0)
+ 916 051c 230E0500 		sb	zero,28(a0)
+ 917              	.LVL82:
+ 918              	.LBE59:
+ 919              	.LBE58:
+ 119:src/KernelSemaphore.cpp ****     return handle;
+ 920              		.loc 1 119 5 is_stmt 1
+ 921              	.LBB62:
+ 922              	.LBB63:
+  31:src/../h/../h/List.hpp ****         if (tail) {
+ 923              		.loc 2 31 28 is_stmt 0
+ 924 0520 13050001 		li	a0,16
+ 925 0524 97000000 		call	_ZN11KernelClassnwEm@plt
+ 925      E7800000 
+ 926              	.LVL83:
+ 927              	.LBB64:
+ 928              	.LBB65:
+  13:src/../h/../h/List.hpp ****     };
+ 929              		.loc 2 13 64
+ 930 052c 23309500 		sd	s1,0(a0)
+ 931 0530 23340500 		sd	zero,8(a0)
+ 932              	.LVL84:
+ 933              	.LBE65:
+ 934              	.LBE64:
+  32:src/../h/../h/List.hpp ****             tail->next = element;
+ 935              		.loc 2 32 13
+ 936 0534 97070000 		ld	a5,.LANCHOR0+8
+ 936      83B70700 
+  32:src/../h/../h/List.hpp ****             tail->next = element;
+ 937              		.loc 2 32 9
+ 938 053c 63860702 		beqz	a5,.L74
+  33:src/../h/../h/List.hpp ****             tail = element;
+ 939              		.loc 2 33 13
+ 940 0540 23B4A700 		sd	a0,8(a5)
+  34:src/../h/../h/List.hpp ****         }
+ 941              		.loc 2 34 13
+ 942 0544 97070000 		sd	a0,.LANCHOR0+8,a5
+ 942      23B0A700 
+ 943              	.LVL85:
+ 944              	.L73:
+ 945              	.LBE63:
+ 946              	.LBE62:
+ 947              		.loc 1 121 1
+ 948 054c 13850400 		mv	a0,s1
+ 949              	.LVL86:
+ 950 0550 83308101 		ld	ra,24(sp)
+ 951              		.cfi_remember_state
+ 952              		.cfi_restore 1
+ 953 0554 03340101 		ld	s0,16(sp)
+ 954              		.cfi_restore 8
+ 955              		.cfi_def_cfa 2, 32
+ 956 0558 83348100 		ld	s1,8(sp)
+ 957              		.cfi_restore 9
+ 958              	.LVL87:
+GAS LISTING /tmp/ccFFokii.s 			page 26
+
+
+ 959 055c 03390100 		ld	s2,0(sp)
+ 960              		.cfi_restore 18
+ 961 0560 13010102 		addi	sp,sp,32
+ 962              		.cfi_def_cfa_offset 0
+ 963 0564 67800000 		jr	ra
+ 964              	.LVL88:
+ 965              	.L74:
+ 966              		.cfi_restore_state
+ 967              	.LBB67:
+ 968              	.LBB66:
+  37:src/../h/../h/List.hpp ****         }
+ 969              		.loc 2 37 13
+ 970 0568 97070000 		lla	a5,.LANCHOR0
+ 970      93870700 
+ 971 0570 23B4A700 		sd	a0,8(a5)
+ 972 0574 23B0A700 		sd	a0,0(a5)
+ 973              	.LVL89:
+ 974              	.LBE66:
+ 975              	.LBE67:
+ 120:src/KernelSemaphore.cpp **** }
+ 976              		.loc 1 120 5 is_stmt 1
+ 120:src/KernelSemaphore.cpp **** }
+ 977              		.loc 1 120 12 is_stmt 0
+ 978 0578 6FF05FFD 		j	.L73
+ 979              		.cfi_endproc
+ 980              	.LFE25:
+ 982              		.align	2
+ 984              	_GLOBAL__sub_I__ZN15KernelSemaphore18declaredSemaphoresE:
+ 985              	.LFB44:
+ 986              		.loc 1 121 1 is_stmt 1
+ 987              		.cfi_startproc
+ 988 057c 130101FF 		addi	sp,sp,-16
+ 989              		.cfi_def_cfa_offset 16
+ 990 0580 23341100 		sd	ra,8(sp)
+ 991 0584 23308100 		sd	s0,0(sp)
+ 992              		.cfi_offset 1, -8
+ 993              		.cfi_offset 8, -16
+ 994 0588 13040101 		addi	s0,sp,16
+ 995              		.cfi_def_cfa 8, 0
+ 996              		.loc 1 121 1 is_stmt 0
+ 997 058c B7050100 		li	a1,65536
+ 998 0590 9385F5FF 		addi	a1,a1,-1
+ 999 0594 13051000 		li	a0,1
+ 1000 0598 97000000 		call	_Z41__static_initialization_and_destruction_0ii
+ 1000      E7800000 
+ 1001              	.LVL90:
+ 1002 05a0 83308100 		ld	ra,8(sp)
+ 1003              		.cfi_restore 1
+ 1004 05a4 03340100 		ld	s0,0(sp)
+ 1005              		.cfi_restore 8
+ 1006              		.cfi_def_cfa 2, 16
+ 1007 05a8 13010101 		addi	sp,sp,16
+ 1008              		.cfi_def_cfa_offset 0
+ 1009 05ac 67800000 		jr	ra
+ 1010              		.cfi_endproc
+ 1011              	.LFE44:
+ 1013              		.section	.init_array,"aw"
+GAS LISTING /tmp/ccFFokii.s 			page 27
+
+
+ 1014              		.align	3
+ 1015 0000 00000000 		.dword	_GLOBAL__sub_I__ZN15KernelSemaphore18declaredSemaphoresE
+ 1015      00000000 
+ 1016              		.globl	_ZN15KernelSemaphore18declaredSemaphoresE
+ 1017              		.bss
+ 1018              		.align	3
+ 1019              		.set	.LANCHOR0,. + 0
+ 1022              	_ZN15KernelSemaphore18declaredSemaphoresE:
+ 1023 0000 00000000 		.zero	16
+ 1023      00000000 
+ 1023      00000000 
+ 1023      00000000 
+ 1024              		.text
+ 1025              	.Letext0:
+ 1026              		.file 4 "src/../h/../h/../lib/hw.h"
+ 1027              		.file 5 "src/../h/../h/KernelClass.hpp"
+ 1028              		.file 6 "src/../h/KernelThread.hpp"
+ 1029              		.file 7 "src/../h/Timer.hpp"
+ 1030              		.file 8 "src/../h/Scheduler.hpp"
+ 1031              		.file 9 "src/../test/../h/syscall_c.hpp"
+GAS LISTING /tmp/ccFFokii.s 			page 28
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 KernelSemaphore.cpp
+     /tmp/ccFFokii.s:8      .text:0000000000000000 _Z41__static_initialization_and_destruction_0ii
+     /tmp/ccFFokii.s:12     .text:0000000000000000 .L0 
+     /tmp/ccFFokii.s:14     .text:0000000000000000 .L0 
+     /tmp/ccFFokii.s:15     .text:0000000000000004 .L0 
+     /tmp/ccFFokii.s:17     .text:0000000000000008 .L0 
+     /tmp/ccFFokii.s:19     .text:000000000000000c .L0 
+     /tmp/ccFFokii.s:21     .text:000000000000000c .L0 
+     /tmp/ccFFokii.s:25     .text:0000000000000018 .L0 
+     /tmp/ccFFokii.s:26     .text:0000000000000018 .L0 
+     /tmp/ccFFokii.s:27     .text:0000000000000018 .L0 
+     /tmp/ccFFokii.s:29     .text:000000000000001c .L0 
+     /tmp/ccFFokii.s:32     .text:0000000000000020 .L0 
+     /tmp/ccFFokii.s:34     .text:0000000000000020 .L0 
+     /tmp/ccFFokii.s:43     .text:000000000000002c .L0 
+     /tmp/ccFFokii.s:51     .text:000000000000003c .L0 
+     /tmp/ccFFokii.s:52     .text:0000000000000040 .L0 
+     /tmp/ccFFokii.s:58     .text:0000000000000040 _ZN15KernelSemaphore7unblockEv
+     /tmp/ccFFokii.s:61     .text:0000000000000040 .L0 
+     /tmp/ccFFokii.s:63     .text:0000000000000040 .L0 
+     /tmp/ccFFokii.s:64     .text:0000000000000044 .L0 
+     /tmp/ccFFokii.s:69     .text:0000000000000054 .L0 
+     /tmp/ccFFokii.s:70     .text:0000000000000054 .L0 
+     /tmp/ccFFokii.s:71     .text:0000000000000054 .L0 
+     /tmp/ccFFokii.s:72     .text:0000000000000054 .L0 
+     /tmp/ccFFokii.s:74     .text:0000000000000058 .L0 
+     /tmp/ccFFokii.s:80     .text:000000000000005c .L0 
+     /tmp/ccFFokii.s:81     .text:000000000000005c .L0 
+     /tmp/ccFFokii.s:84     .text:0000000000000060 .L0 
+     /tmp/ccFFokii.s:87     .text:0000000000000064 .L0 
+     /tmp/ccFFokii.s:89     .text:0000000000000068 .L0 
+     /tmp/ccFFokii.s:91     .text:000000000000006c .L0 
+     /tmp/ccFFokii.s:94     .text:0000000000000070 .L0 
+     /tmp/ccFFokii.s:97     .text:0000000000000074 .L0 
+     /tmp/ccFFokii.s:103    .text:000000000000007c .L0 
+     /tmp/ccFFokii.s:104    .text:000000000000007c .L0 
+     /tmp/ccFFokii.s:108    .text:0000000000000088 .L0 
+     /tmp/ccFFokii.s:110    .text:000000000000008c .L0 
+     /tmp/ccFFokii.s:111    .text:000000000000008c .L0 
+     /tmp/ccFFokii.s:114    .text:0000000000000094 .L0 
+     /tmp/ccFFokii.s:116    .text:0000000000000098 .L0 
+     /tmp/ccFFokii.s:117    .text:0000000000000098 .L0 
+     /tmp/ccFFokii.s:121    .text:00000000000000a0 .L0 
+     /tmp/ccFFokii.s:122    .text:00000000000000a0 .L0 
+     /tmp/ccFFokii.s:127    .text:00000000000000ac .L0 
+     /tmp/ccFFokii.s:128    .text:00000000000000b0 .L0 
+     /tmp/ccFFokii.s:129    .text:00000000000000b0 .L0 
+     /tmp/ccFFokii.s:131    .text:00000000000000b4 .L0 
+     /tmp/ccFFokii.s:132    .text:00000000000000b4 .L0 
+     /tmp/ccFFokii.s:134    .text:00000000000000b8 .L0 
+     /tmp/ccFFokii.s:137    .text:00000000000000bc .L0 
+     /tmp/ccFFokii.s:140    .text:00000000000000c0 .L0 
+     /tmp/ccFFokii.s:144    .text:00000000000000c4 .L0 
+     /tmp/ccFFokii.s:148    .text:00000000000000c4 .L0 
+     /tmp/ccFFokii.s:153    .text:00000000000000cc .L0 
+     /tmp/ccFFokii.s:157    .text:00000000000000d4 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 29
+
+
+     /tmp/ccFFokii.s:163    .text:00000000000000d4 _ZN15KernelSemaphore5blockEm
+     /tmp/ccFFokii.s:166    .text:00000000000000d4 .L0 
+     /tmp/ccFFokii.s:168    .text:00000000000000d4 .L0 
+     /tmp/ccFFokii.s:169    .text:00000000000000d8 .L0 
+     /tmp/ccFFokii.s:175    .text:00000000000000ec .L0 
+     /tmp/ccFFokii.s:176    .text:00000000000000ec .L0 
+     /tmp/ccFFokii.s:177    .text:00000000000000ec .L0 
+     /tmp/ccFFokii.s:178    .text:00000000000000ec .L0 
+     /tmp/ccFFokii.s:179    .text:00000000000000ec .L0 
+     /tmp/ccFFokii.s:181    .text:00000000000000f0 .L0 
+     /tmp/ccFFokii.s:185    .text:00000000000000f8 .L0 
+     /tmp/ccFFokii.s:186    .text:00000000000000f8 .L0 
+     /tmp/ccFFokii.s:190    .text:0000000000000104 .L0 
+     /tmp/ccFFokii.s:191    .text:0000000000000104 .L0 
+     /tmp/ccFFokii.s:194    .text:000000000000010c .L0 
+     /tmp/ccFFokii.s:196    .text:0000000000000110 .L0 
+     /tmp/ccFFokii.s:198    .text:0000000000000114 .L0 
+     /tmp/ccFFokii.s:199    .text:0000000000000114 .L0 
+     /tmp/ccFFokii.s:201    .text:0000000000000118 .L0 
+     /tmp/ccFFokii.s:202    .text:0000000000000118 .L0 
+     /tmp/ccFFokii.s:208    .text:0000000000000124 .L0 
+     /tmp/ccFFokii.s:214    .text:000000000000012c .L0 
+     /tmp/ccFFokii.s:215    .text:000000000000012c .L0 
+     /tmp/ccFFokii.s:219    .text:0000000000000134 .L0 
+     /tmp/ccFFokii.s:223    .text:0000000000000138 .L0 
+     /tmp/ccFFokii.s:224    .text:0000000000000138 .L0 
+     /tmp/ccFFokii.s:226    .text:000000000000013c .L0 
+     /tmp/ccFFokii.s:227    .text:000000000000013c .L0 
+     /tmp/ccFFokii.s:229    .text:0000000000000140 .L0 
+     /tmp/ccFFokii.s:231    .text:0000000000000144 .L0 
+     /tmp/ccFFokii.s:233    .text:0000000000000148 .L0 
+     /tmp/ccFFokii.s:236    .text:000000000000014c .L0 
+     /tmp/ccFFokii.s:237    .text:000000000000014c .L0 
+     /tmp/ccFFokii.s:238    .text:000000000000014c .L0 
+     /tmp/ccFFokii.s:240    .text:0000000000000150 .L0 
+     /tmp/ccFFokii.s:243    .text:0000000000000154 .L0 
+     /tmp/ccFFokii.s:246    .text:0000000000000158 .L0 
+     /tmp/ccFFokii.s:248    .text:000000000000015c .L0 
+     /tmp/ccFFokii.s:249    .text:000000000000015c .L0 
+     /tmp/ccFFokii.s:251    .text:0000000000000160 .L0 
+     /tmp/ccFFokii.s:254    .text:0000000000000164 .L0 
+     /tmp/ccFFokii.s:255    .text:0000000000000164 .L0 
+     /tmp/ccFFokii.s:257    .text:0000000000000168 .L0 
+     /tmp/ccFFokii.s:260    .text:000000000000016c .L0 
+     /tmp/ccFFokii.s:261    .text:000000000000016c .L0 
+     /tmp/ccFFokii.s:264    .text:0000000000000174 .L0 
+     /tmp/ccFFokii.s:267    .text:0000000000000180 .L0 
+     /tmp/ccFFokii.s:268    .text:0000000000000180 .L0 
+     /tmp/ccFFokii.s:271    .text:000000000000018c .L0 
+     /tmp/ccFFokii.s:272    .text:000000000000018c .L0 
+     /tmp/ccFFokii.s:277    .text:000000000000019c .L0 
+     /tmp/ccFFokii.s:278    .text:00000000000001a0 .L0 
+     /tmp/ccFFokii.s:279    .text:00000000000001a0 .L0 
+     /tmp/ccFFokii.s:281    .text:00000000000001a4 .L0 
+     /tmp/ccFFokii.s:282    .text:00000000000001a4 .L0 
+     /tmp/ccFFokii.s:284    .text:00000000000001a8 .L0 
+     /tmp/ccFFokii.s:287    .text:00000000000001ac .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 30
+
+
+     /tmp/ccFFokii.s:290    .text:00000000000001b0 .L0 
+     /tmp/ccFFokii.s:293    .text:00000000000001b4 .L0 
+     /tmp/ccFFokii.s:297    .text:00000000000001b8 .L0 
+     /tmp/ccFFokii.s:299    .text:00000000000001b8 .L0 
+     /tmp/ccFFokii.s:300    .text:00000000000001b8 .L0 
+     /tmp/ccFFokii.s:302    .text:00000000000001bc .L0 
+     /tmp/ccFFokii.s:306    .text:00000000000001c4 .L0 
+     /tmp/ccFFokii.s:310    .text:00000000000001cc .L0 
+     /tmp/ccFFokii.s:311    .text:00000000000001cc .L0 
+     /tmp/ccFFokii.s:313    .text:00000000000001d4 .L0 
+     /tmp/ccFFokii.s:319    .text:00000000000001d4 _ZN15KernelSemaphore8doSwitchEP12KernelThread
+     /tmp/ccFFokii.s:322    .text:00000000000001d4 .L0 
+     /tmp/ccFFokii.s:324    .text:00000000000001d4 .L0 
+     /tmp/ccFFokii.s:325    .text:00000000000001d8 .L0 
+     /tmp/ccFFokii.s:329    .text:00000000000001e4 .L0 
+     /tmp/ccFFokii.s:330    .text:00000000000001e4 .L0 
+     /tmp/ccFFokii.s:331    .text:00000000000001e4 .L0 
+     /tmp/ccFFokii.s:333    .text:00000000000001e8 .L0 
+     /tmp/ccFFokii.s:336    .text:00000000000001ec .L0 
+     /tmp/ccFFokii.s:337    .text:00000000000001ec .L0 
+     /tmp/ccFFokii.s:340    .text:00000000000001f4 .L0 
+     /tmp/ccFFokii.s:343    .text:0000000000000200 .L0 
+     /tmp/ccFFokii.s:344    .text:0000000000000200 .L0 
+     /tmp/ccFFokii.s:347    .text:000000000000020c .L0 
+     /tmp/ccFFokii.s:348    .text:000000000000020c .L0 
+     /tmp/ccFFokii.s:353    .text:000000000000021c .L0 
+     /tmp/ccFFokii.s:354    .text:0000000000000220 .L0 
+     /tmp/ccFFokii.s:356    .text:0000000000000224 .L0 
+     /tmp/ccFFokii.s:357    .text:0000000000000224 .L0 
+     /tmp/ccFFokii.s:359    .text:0000000000000228 .L0 
+     /tmp/ccFFokii.s:362    .text:000000000000022c .L0 
+     /tmp/ccFFokii.s:364    .text:0000000000000230 .L0 
+     /tmp/ccFFokii.s:370    .text:0000000000000230 _ZN15KernelSemaphore6signalEv
+     /tmp/ccFFokii.s:373    .text:0000000000000230 .L0 
+     /tmp/ccFFokii.s:375    .text:0000000000000230 .L0 
+     /tmp/ccFFokii.s:376    .text:0000000000000230 .L0 
+     /tmp/ccFFokii.s:377    .text:0000000000000230 .L0 
+     /tmp/ccFFokii.s:380    .text:0000000000000238 .L0 
+     /tmp/ccFFokii.s:382    .text:000000000000023c .L0 
+     /tmp/ccFFokii.s:383    .text:000000000000023c .L0 
+     /tmp/ccFFokii.s:386    .text:0000000000000248 .L0 
+     /tmp/ccFFokii.s:390    .text:0000000000000250 .L0 
+     /tmp/ccFFokii.s:391    .text:0000000000000250 .L0 
+     /tmp/ccFFokii.s:393    .text:0000000000000254 .L0 
+     /tmp/ccFFokii.s:396    .text:000000000000025c .L0 
+     /tmp/ccFFokii.s:398    .text:0000000000000260 .L0 
+     /tmp/ccFFokii.s:402    .text:0000000000000268 .L0 
+     /tmp/ccFFokii.s:403    .text:000000000000026c .L0 
+     /tmp/ccFFokii.s:406    .text:0000000000000274 .L0 
+     /tmp/ccFFokii.s:407    .text:0000000000000274 .L0 
+     /tmp/ccFFokii.s:409    .text:0000000000000278 .L0 
+     /tmp/ccFFokii.s:411    .text:0000000000000278 .L0 
+     /tmp/ccFFokii.s:412    .text:0000000000000278 .L0 
+     /tmp/ccFFokii.s:415    .text:0000000000000280 .L0 
+     /tmp/ccFFokii.s:416    .text:0000000000000284 .L0 
+     /tmp/ccFFokii.s:418    .text:0000000000000288 .L0 
+     /tmp/ccFFokii.s:419    .text:0000000000000288 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 31
+
+
+     /tmp/ccFFokii.s:421    .text:000000000000028c .L0 
+     /tmp/ccFFokii.s:423    .text:0000000000000290 .L0 
+     /tmp/ccFFokii.s:429    .text:0000000000000290 _ZN15KernelSemaphore9timedWaitEm
+     /tmp/ccFFokii.s:432    .text:0000000000000290 .L0 
+     /tmp/ccFFokii.s:434    .text:0000000000000290 .L0 
+     /tmp/ccFFokii.s:435    .text:0000000000000290 .L0 
+     /tmp/ccFFokii.s:436    .text:0000000000000290 .L0 
+     /tmp/ccFFokii.s:438    .text:0000000000000294 .L0 
+     /tmp/ccFFokii.s:440    .text:0000000000000298 .L0 
+     /tmp/ccFFokii.s:442    .text:000000000000029c .L0 
+     /tmp/ccFFokii.s:447    .text:00000000000002a8 .L0 
+     /tmp/ccFFokii.s:448    .text:00000000000002ac .L0 
+     /tmp/ccFFokii.s:451    .text:00000000000002b4 .L0 
+     /tmp/ccFFokii.s:452    .text:00000000000002b4 .L0 
+     /tmp/ccFFokii.s:454    .text:00000000000002b8 .L0 
+     /tmp/ccFFokii.s:456    .text:00000000000002b8 .L0 
+     /tmp/ccFFokii.s:457    .text:00000000000002b8 .L0 
+     /tmp/ccFFokii.s:460    .text:00000000000002c0 .L0 
+     /tmp/ccFFokii.s:461    .text:00000000000002c4 .L0 
+     /tmp/ccFFokii.s:463    .text:00000000000002c8 .L0 
+     /tmp/ccFFokii.s:464    .text:00000000000002c8 .L0 
+     /tmp/ccFFokii.s:466    .text:00000000000002cc .L0 
+     /tmp/ccFFokii.s:468    .text:00000000000002d0 .L0 
+     /tmp/ccFFokii.s:474    .text:00000000000002d0 _ZN15KernelSemaphore4waitEv
+     /tmp/ccFFokii.s:477    .text:00000000000002d0 .L0 
+     /tmp/ccFFokii.s:479    .text:00000000000002d0 .L0 
+     /tmp/ccFFokii.s:480    .text:00000000000002d4 .L0 
+     /tmp/ccFFokii.s:483    .text:00000000000002dc .L0 
+     /tmp/ccFFokii.s:484    .text:00000000000002dc .L0 
+     /tmp/ccFFokii.s:486    .text:00000000000002e0 .L0 
+     /tmp/ccFFokii.s:488    .text:00000000000002e0 .L0 
+     /tmp/ccFFokii.s:489    .text:00000000000002e0 .L0 
+     /tmp/ccFFokii.s:494    .text:00000000000002f0 .L0 
+     /tmp/ccFFokii.s:495    .text:00000000000002f4 .L0 
+     /tmp/ccFFokii.s:497    .text:00000000000002f8 .L0 
+     /tmp/ccFFokii.s:498    .text:00000000000002f8 .L0 
+     /tmp/ccFFokii.s:500    .text:00000000000002fc .L0 
+     /tmp/ccFFokii.s:502    .text:0000000000000300 .L0 
+     /tmp/ccFFokii.s:508    .text:0000000000000300 _ZN15KernelSemaphore7tryWaitEv
+     /tmp/ccFFokii.s:511    .text:0000000000000300 .L0 
+     /tmp/ccFFokii.s:513    .text:0000000000000300 .L0 
+     /tmp/ccFFokii.s:514    .text:0000000000000304 .L0 
+     /tmp/ccFFokii.s:516    .text:0000000000000308 .L0 
+     /tmp/ccFFokii.s:518    .text:000000000000030c .L0 
+     /tmp/ccFFokii.s:520    .text:000000000000030c .L0 
+     /tmp/ccFFokii.s:521    .text:000000000000030c .L0 
+     /tmp/ccFFokii.s:524    .text:0000000000000314 .L0 
+     /tmp/ccFFokii.s:526    .text:0000000000000318 .L0 
+     /tmp/ccFFokii.s:527    .text:0000000000000318 .L0 
+     /tmp/ccFFokii.s:530    .text:0000000000000320 .L0 
+     /tmp/ccFFokii.s:532    .text:0000000000000324 .L0 
+     /tmp/ccFFokii.s:536    .text:0000000000000328 .L0 
+     /tmp/ccFFokii.s:537    .text:000000000000032c .L0 
+     /tmp/ccFFokii.s:538    .text:000000000000032c .L0 
+     /tmp/ccFFokii.s:539    .text:000000000000032c .L0 
+     /tmp/ccFFokii.s:541    .text:0000000000000330 .L0 
+     /tmp/ccFFokii.s:545    .text:0000000000000334 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 32
+
+
+     /tmp/ccFFokii.s:547    .text:0000000000000334 .L0 
+     /tmp/ccFFokii.s:548    .text:0000000000000334 .L0 
+     /tmp/ccFFokii.s:550    .text:0000000000000338 .L0 
+     /tmp/ccFFokii.s:553    .text:0000000000000340 .L0 
+     /tmp/ccFFokii.s:554    .text:0000000000000340 .L0 
+     /tmp/ccFFokii.s:560    .text:0000000000000348 .L0 
+     /tmp/ccFFokii.s:563    .text:0000000000000350 .L0 
+     /tmp/ccFFokii.s:569    .text:0000000000000350 _ZNK15KernelSemaphore8getValueEv
+     /tmp/ccFFokii.s:572    .text:0000000000000350 .L0 
+     /tmp/ccFFokii.s:574    .text:0000000000000350 .L0 
+     /tmp/ccFFokii.s:575    .text:0000000000000354 .L0 
+     /tmp/ccFFokii.s:577    .text:0000000000000358 .L0 
+     /tmp/ccFFokii.s:579    .text:000000000000035c .L0 
+     /tmp/ccFFokii.s:581    .text:000000000000035c .L0 
+     /tmp/ccFFokii.s:582    .text:000000000000035c .L0 
+     /tmp/ccFFokii.s:585    .text:0000000000000360 .L0 
+     /tmp/ccFFokii.s:587    .text:0000000000000368 .L0 
+     /tmp/ccFFokii.s:588    .text:0000000000000368 .L0 
+     /tmp/ccFFokii.s:590    .text:000000000000036c .L0 
+     /tmp/ccFFokii.s:592    .text:0000000000000370 .L0 
+     /tmp/ccFFokii.s:598    .text:0000000000000370 _ZNK15KernelSemaphore8isClosedEv
+     /tmp/ccFFokii.s:601    .text:0000000000000370 .L0 
+     /tmp/ccFFokii.s:603    .text:0000000000000370 .L0 
+     /tmp/ccFFokii.s:604    .text:0000000000000374 .L0 
+     /tmp/ccFFokii.s:606    .text:0000000000000378 .L0 
+     /tmp/ccFFokii.s:608    .text:000000000000037c .L0 
+     /tmp/ccFFokii.s:610    .text:000000000000037c .L0 
+     /tmp/ccFFokii.s:611    .text:000000000000037c .L0 
+     /tmp/ccFFokii.s:614    .text:0000000000000380 .L0 
+     /tmp/ccFFokii.s:616    .text:0000000000000388 .L0 
+     /tmp/ccFFokii.s:617    .text:0000000000000388 .L0 
+     /tmp/ccFFokii.s:619    .text:000000000000038c .L0 
+     /tmp/ccFFokii.s:621    .text:0000000000000390 .L0 
+     /tmp/ccFFokii.s:627    .text:0000000000000390 _ZN15KernelSemaphore5closeEv
+     /tmp/ccFFokii.s:630    .text:0000000000000390 .L0 
+     /tmp/ccFFokii.s:632    .text:0000000000000390 .L0 
+     /tmp/ccFFokii.s:633    .text:0000000000000394 .L0 
+     /tmp/ccFFokii.s:637    .text:00000000000003a0 .L0 
+     /tmp/ccFFokii.s:638    .text:00000000000003a0 .L0 
+     /tmp/ccFFokii.s:639    .text:00000000000003a0 .L0 
+     /tmp/ccFFokii.s:641    .text:00000000000003a4 .L0 
+     /tmp/ccFFokii.s:644    .text:00000000000003a8 .L0 
+     /tmp/ccFFokii.s:645    .text:00000000000003a8 .L0 
+     /tmp/ccFFokii.s:650    .text:00000000000003b0 .L0 
+     /tmp/ccFFokii.s:653    .text:00000000000003b0 .L0 
+     /tmp/ccFFokii.s:654    .text:00000000000003b0 .L0 
+     /tmp/ccFFokii.s:659    .text:00000000000003b4 .L0 
+     /tmp/ccFFokii.s:661    .text:00000000000003b8 .L0 
+     /tmp/ccFFokii.s:662    .text:00000000000003b8 .L0 
+     /tmp/ccFFokii.s:666    .text:00000000000003c4 .L0 
+     /tmp/ccFFokii.s:672    .text:00000000000003c8 .L0 
+     /tmp/ccFFokii.s:673    .text:00000000000003c8 .L0 
+     /tmp/ccFFokii.s:679    .text:00000000000003d4 .L0 
+     /tmp/ccFFokii.s:681    .text:00000000000003d8 .L0 
+     /tmp/ccFFokii.s:683    .text:00000000000003dc .L0 
+     /tmp/ccFFokii.s:687    .text:00000000000003e0 .L0 
+     /tmp/ccFFokii.s:691    .text:00000000000003e4 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 33
+
+
+     /tmp/ccFFokii.s:693    .text:00000000000003e8 .L0 
+     /tmp/ccFFokii.s:695    .text:00000000000003ec .L0 
+     /tmp/ccFFokii.s:697    .text:00000000000003f0 .L0 
+     /tmp/ccFFokii.s:703    .text:00000000000003f8 .L0 
+     /tmp/ccFFokii.s:705    .text:00000000000003fc .L0 
+     /tmp/ccFFokii.s:711    .text:0000000000000408 .L0 
+     /tmp/ccFFokii.s:712    .text:000000000000040c .L0 
+     /tmp/ccFFokii.s:714    .text:0000000000000410 .L0 
+     /tmp/ccFFokii.s:715    .text:0000000000000410 .L0 
+     /tmp/ccFFokii.s:717    .text:0000000000000414 .L0 
+     /tmp/ccFFokii.s:720    .text:0000000000000418 .L0 
+     /tmp/ccFFokii.s:722    .text:000000000000041c .L0 
+     /tmp/ccFFokii.s:728    .text:000000000000041c _ZN15KernelSemaphore18updateIndividuallyEv
+     /tmp/ccFFokii.s:731    .text:000000000000041c .L0 
+     /tmp/ccFFokii.s:733    .text:000000000000041c .L0 
+     /tmp/ccFFokii.s:734    .text:0000000000000420 .L0 
+     /tmp/ccFFokii.s:739    .text:0000000000000430 .L0 
+     /tmp/ccFFokii.s:740    .text:0000000000000430 .L0 
+     /tmp/ccFFokii.s:741    .text:0000000000000430 .L0 
+     /tmp/ccFFokii.s:742    .text:0000000000000430 .L0 
+     /tmp/ccFFokii.s:744    .text:0000000000000434 .L0 
+     /tmp/ccFFokii.s:750    .text:000000000000043c .L0 
+     /tmp/ccFFokii.s:753    .text:0000000000000444 .L0 
+     /tmp/ccFFokii.s:754    .text:0000000000000444 .L0 
+     /tmp/ccFFokii.s:759    .text:0000000000000450 .L0 
+     /tmp/ccFFokii.s:762    .text:0000000000000450 .L0 
+     /tmp/ccFFokii.s:763    .text:0000000000000450 .L0 
+     /tmp/ccFFokii.s:768    .text:0000000000000454 .L0 
+     /tmp/ccFFokii.s:773    .text:0000000000000458 .L0 
+     /tmp/ccFFokii.s:775    .text:000000000000045c .L0 
+     /tmp/ccFFokii.s:781    .text:0000000000000460 .L0 
+     /tmp/ccFFokii.s:783    .text:0000000000000464 .L0 
+     /tmp/ccFFokii.s:786    .text:000000000000046c .L0 
+     /tmp/ccFFokii.s:791    .text:0000000000000470 .L0 
+     /tmp/ccFFokii.s:792    .text:0000000000000470 .L0 
+     /tmp/ccFFokii.s:794    .text:0000000000000474 .L0 
+     /tmp/ccFFokii.s:796    .text:0000000000000478 .L0 
+     /tmp/ccFFokii.s:803    .text:0000000000000480 .L0 
+     /tmp/ccFFokii.s:804    .text:0000000000000484 .L0 
+     /tmp/ccFFokii.s:806    .text:0000000000000488 .L0 
+     /tmp/ccFFokii.s:807    .text:0000000000000488 .L0 
+     /tmp/ccFFokii.s:809    .text:000000000000048c .L0 
+     /tmp/ccFFokii.s:812    .text:0000000000000490 .L0 
+     /tmp/ccFFokii.s:814    .text:0000000000000494 .L0 
+     /tmp/ccFFokii.s:816    .text:0000000000000498 .L0 
+     /tmp/ccFFokii.s:822    .text:0000000000000498 _ZN15KernelSemaphore6updateEv
+     /tmp/ccFFokii.s:825    .text:0000000000000498 .L0 
+     /tmp/ccFFokii.s:826    .text:0000000000000498 .L0 
+     /tmp/ccFFokii.s:827    .text:000000000000049c .L0 
+     /tmp/ccFFokii.s:831    .text:00000000000004a8 .L0 
+     /tmp/ccFFokii.s:832    .text:00000000000004a8 .L0 
+     /tmp/ccFFokii.s:833    .text:00000000000004a8 .L0 
+     /tmp/ccFFokii.s:835    .text:00000000000004ac .L0 
+     /tmp/ccFFokii.s:838    .text:00000000000004ac .L0 
+     /tmp/ccFFokii.s:839    .text:00000000000004ac .L0 
+     /tmp/ccFFokii.s:843    .text:00000000000004b4 .L0 
+     /tmp/ccFFokii.s:845    .text:00000000000004b8 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 34
+
+
+     /tmp/ccFFokii.s:846    .text:00000000000004b8 .L0 
+     /tmp/ccFFokii.s:850    .text:00000000000004c4 .L0 
+     /tmp/ccFFokii.s:851    .text:00000000000004c4 .L0 
+     /tmp/ccFFokii.s:854    .text:00000000000004c8 .L0 
+     /tmp/ccFFokii.s:858    .text:00000000000004cc .L0 
+     /tmp/ccFFokii.s:859    .text:00000000000004d0 .L0 
+     /tmp/ccFFokii.s:861    .text:00000000000004d4 .L0 
+     /tmp/ccFFokii.s:862    .text:00000000000004d4 .L0 
+     /tmp/ccFFokii.s:864    .text:00000000000004d8 .L0 
+     /tmp/ccFFokii.s:867    .text:00000000000004dc .L0 
+     /tmp/ccFFokii.s:869    .text:00000000000004e0 .L0 
+     /tmp/ccFFokii.s:875    .text:00000000000004e0 _ZN15KernelSemaphore21createKernelSemaphoreEm
+     /tmp/ccFFokii.s:878    .text:00000000000004e0 .L0 
+     /tmp/ccFFokii.s:880    .text:00000000000004e0 .L0 
+     /tmp/ccFFokii.s:881    .text:00000000000004e4 .L0 
+     /tmp/ccFFokii.s:886    .text:00000000000004f4 .L0 
+     /tmp/ccFFokii.s:887    .text:00000000000004f4 .L0 
+     /tmp/ccFFokii.s:888    .text:00000000000004f4 .L0 
+     /tmp/ccFFokii.s:889    .text:00000000000004f4 .L0 
+     /tmp/ccFFokii.s:891    .text:00000000000004f8 .L0 
+     /tmp/ccFFokii.s:894    .text:00000000000004fc .L0 
+     /tmp/ccFFokii.s:895    .text:00000000000004fc .L0 
+     /tmp/ccFFokii.s:906    .text:000000000000050c .L0 
+     /tmp/ccFFokii.s:913    .text:0000000000000514 .L0 
+     /tmp/ccFFokii.s:923    .text:0000000000000520 .L0 
+     /tmp/ccFFokii.s:924    .text:0000000000000520 .L0 
+     /tmp/ccFFokii.s:930    .text:000000000000052c .L0 
+     /tmp/ccFFokii.s:936    .text:0000000000000534 .L0 
+     /tmp/ccFFokii.s:938    .text:000000000000053c .L0 
+     /tmp/ccFFokii.s:940    .text:0000000000000540 .L0 
+     /tmp/ccFFokii.s:942    .text:0000000000000544 .L0 
+     /tmp/ccFFokii.s:948    .text:000000000000054c .L0 
+     /tmp/ccFFokii.s:951    .text:0000000000000554 .L0 
+     /tmp/ccFFokii.s:952    .text:0000000000000554 .L0 
+     /tmp/ccFFokii.s:954    .text:0000000000000558 .L0 
+     /tmp/ccFFokii.s:955    .text:0000000000000558 .L0 
+     /tmp/ccFFokii.s:957    .text:000000000000055c .L0 
+     /tmp/ccFFokii.s:960    .text:0000000000000560 .L0 
+     /tmp/ccFFokii.s:962    .text:0000000000000564 .L0 
+     /tmp/ccFFokii.s:966    .text:0000000000000568 .L0 
+     /tmp/ccFFokii.s:970    .text:0000000000000568 .L0 
+     /tmp/ccFFokii.s:977    .text:0000000000000578 .L0 
+     /tmp/ccFFokii.s:978    .text:0000000000000578 .L0 
+     /tmp/ccFFokii.s:979    .text:000000000000057c .L0 
+     /tmp/ccFFokii.s:984    .text:000000000000057c _GLOBAL__sub_I__ZN15KernelSemaphore18declaredSemaphoresE
+     /tmp/ccFFokii.s:987    .text:000000000000057c .L0 
+     /tmp/ccFFokii.s:988    .text:000000000000057c .L0 
+     /tmp/ccFFokii.s:989    .text:0000000000000580 .L0 
+     /tmp/ccFFokii.s:992    .text:0000000000000588 .L0 
+     /tmp/ccFFokii.s:993    .text:0000000000000588 .L0 
+     /tmp/ccFFokii.s:995    .text:000000000000058c .L0 
+     /tmp/ccFFokii.s:997    .text:000000000000058c .L0 
+     /tmp/ccFFokii.s:1003   .text:00000000000005a4 .L0 
+     /tmp/ccFFokii.s:1005   .text:00000000000005a8 .L0 
+     /tmp/ccFFokii.s:1006   .text:00000000000005a8 .L0 
+     /tmp/ccFFokii.s:1008   .text:00000000000005ac .L0 
+     /tmp/ccFFokii.s:1010   .text:00000000000005b0 .L0 
+GAS LISTING /tmp/ccFFokii.s 			page 35
+
+
+     /tmp/ccFFokii.s:1022   .bss:0000000000000000 _ZN15KernelSemaphore18declaredSemaphoresE
+     /tmp/ccFFokii.s:1019   .bss:0000000000000000 .LANCHOR0
+     /tmp/ccFFokii.s:1032   .text:00000000000005b0 .L0 
+     /tmp/ccFFokii.s:43     .text:000000000000002c .L0 
+     /tmp/ccFFokii.s:186    .text:00000000000000f8 .L0 
+     /tmp/ccFFokii.s:264    .text:0000000000000174 .L0 
+     /tmp/ccFFokii.s:268    .text:0000000000000180 .L0 
+     /tmp/ccFFokii.s:340    .text:00000000000001f4 .L0 
+     /tmp/ccFFokii.s:344    .text:0000000000000200 .L0 
+     /tmp/ccFFokii.s:383    .text:000000000000023c .L0 
+     /tmp/ccFFokii.s:673    .text:00000000000003c8 .L0 
+     /tmp/ccFFokii.s:705    .text:00000000000003fc .L0 
+     /tmp/ccFFokii.s:839    .text:00000000000004ac .L0 
+     /tmp/ccFFokii.s:936    .text:0000000000000534 .L0 
+     /tmp/ccFFokii.s:942    .text:0000000000000544 .L0 
+     /tmp/ccFFokii.s:970    .text:0000000000000568 .L0 
+     /tmp/ccFFokii.s:31     .text:0000000000000020 .L4
+     /tmp/ccFFokii.s:23     .text:0000000000000014 .L1
+     /tmp/ccFFokii.s:151    .text:00000000000000cc .L10
+     /tmp/ccFFokii.s:143    .text:00000000000000c4 .L12
+     /tmp/ccFFokii.s:125    .text:00000000000000ac .L5
+     /tmp/ccFFokii.s:119    .text:00000000000000a0 .L9
+     /tmp/ccFFokii.s:92     .text:0000000000000070 .L7
+     /tmp/ccFFokii.s:99     .text:000000000000007c .L6
+     /tmp/ccFFokii.s:244    .text:0000000000000158 .L14
+     /tmp/ccFFokii.s:221    .text:0000000000000138 .L15
+     /tmp/ccFFokii.s:296    .text:00000000000001b8 .L21
+     /tmp/ccFFokii.s:304    .text:00000000000001c4 .L18
+     /tmp/ccFFokii.s:308    .text:00000000000001cc .L22
+     /tmp/ccFFokii.s:258    .text:000000000000016c .L17
+     /tmp/ccFFokii.s:252    .text:0000000000000164 .L19
+     /tmp/ccFFokii.s:388    .text:0000000000000250 .L26
+     /tmp/ccFFokii.s:400    .text:0000000000000268 .L32
+     /tmp/ccFFokii.s:445    .text:00000000000002a8 .L39
+     /tmp/ccFFokii.s:558    .text:0000000000000348 .L44
+     /tmp/ccFFokii.s:544    .text:0000000000000334 .L47
+     /tmp/ccFFokii.s:534    .text:0000000000000328 .L43
+     /tmp/ccFFokii.s:667    .text:00000000000003c8 .L53
+     /tmp/ccFFokii.s:648    .text:00000000000003b0 .L54
+     /tmp/ccFFokii.s:689    .text:00000000000003e4 .L58
+     /tmp/ccFFokii.s:701    .text:00000000000003f8 .L57
+     /tmp/ccFFokii.s:707    .text:0000000000000408 .L52
+     /tmp/ccFFokii.s:677    .text:00000000000003d4 .L61
+     /tmp/ccFFokii.s:685    .text:00000000000003e0 .L56
+     /tmp/ccFFokii.s:757    .text:0000000000000450 .L67
+     /tmp/ccFFokii.s:799    .text:0000000000000480 .L62
+     /tmp/ccFFokii.s:776    .text:0000000000000460 .L64
+     /tmp/ccFFokii.s:748    .text:000000000000043c .L65
+     /tmp/ccFFokii.s:855    .text:00000000000004cc .L69
+     /tmp/ccFFokii.s:841    .text:00000000000004b4 .L71
+     /tmp/ccFFokii.s:965    .text:0000000000000568 .L74
+     /tmp/ccFFokii.s:944    .text:000000000000054c .L73
+     /tmp/ccFFokii.s:3130   .debug_abbrev:0000000000000000 .Ldebug_abbrev0
+     /tmp/ccFFokii.s:5192   .debug_str:0000000000000a74 .LASF157
+     /tmp/ccFFokii.s:5150   .debug_str:00000000000008e2 .LASF158
+     /tmp/ccFFokii.s:5106   .debug_str:0000000000000707 .LASF159
+     /tmp/ccFFokii.s:5      .text:0000000000000000 .Ltext0
+GAS LISTING /tmp/ccFFokii.s 			page 36
+
+
+     /tmp/ccFFokii.s:1025   .text:00000000000005b0 .Letext0
+     /tmp/ccFFokii.s:4930   .debug_line:0000000000000000 .Ldebug_line0
+     /tmp/ccFFokii.s:5046   .debug_str:0000000000000470 .LASF0
+     /tmp/ccFFokii.s:5068   .debug_str:0000000000000526 .LASF1
+     /tmp/ccFFokii.s:5140   .debug_str:0000000000000878 .LASF2
+     /tmp/ccFFokii.s:5146   .debug_str:00000000000008b1 .LASF4
+     /tmp/ccFFokii.s:5054   .debug_str:00000000000004b6 .LASF3
+     /tmp/ccFFokii.s:4944   .debug_str:000000000000007c .LASF5
+     /tmp/ccFFokii.s:5128   .debug_str:00000000000007eb .LASF6
+     /tmp/ccFFokii.s:5118   .debug_str:0000000000000776 .LASF7
+     /tmp/ccFFokii.s:5060   .debug_str:00000000000004ea .LASF8
+     /tmp/ccFFokii.s:5024   .debug_str:00000000000003ae .LASF9
+     /tmp/ccFFokii.s:5032   .debug_str:0000000000000400 .LASF10
+     /tmp/ccFFokii.s:4978   .debug_str:00000000000001dc .LASF11
+     /tmp/ccFFokii.s:5016   .debug_str:0000000000000361 .LASF12
+     /tmp/ccFFokii.s:4990   .debug_str:000000000000026c .LASF13
+     /tmp/ccFFokii.s:4976   .debug_str:00000000000001cc .LASF14
+     /tmp/ccFFokii.s:5172   .debug_str:00000000000009cd .LASF15
+     /tmp/ccFFokii.s:5004   .debug_str:00000000000002cf .LASF16
+     /tmp/ccFFokii.s:5164   .debug_str:0000000000000995 .LASF17
+     /tmp/ccFFokii.s:5186   .debug_str:0000000000000a37 .LASF22
+     /tmp/ccFFokii.s:5258   .debug_str:0000000000000d8b .LASF18
+     /tmp/ccFFokii.s:5126   .debug_str:00000000000007d6 .LASF20
+     /tmp/ccFFokii.s:4966   .debug_str:000000000000016f .LASF19
+     /tmp/ccFFokii.s:5116   .debug_str:0000000000000761 .LASF21
+     /tmp/ccFFokii.s:4936   .debug_str:0000000000000026 .LASF51
+     /tmp/ccFFokii.s:5226   .debug_str:0000000000000c52 .LASF52
+     /tmp/ccFFokii.s:5162   .debug_str:0000000000000982 .LASF59
+     /tmp/ccFFokii.s:4970   .debug_str:0000000000000185 .LASF61
+     /tmp/ccFFokii.s:5166   .debug_str:00000000000009ab .LASF23
+     /tmp/ccFFokii.s:5200   .debug_str:0000000000000b71 .LASF160
+     /tmp/ccFFokii.s:4996   .debug_str:00000000000002b0 .LASF24
+     /tmp/ccFFokii.s:5232   .debug_str:0000000000000c9b .LASF25
+     /tmp/ccFFokii.s:5010   .debug_str:000000000000033f .LASF26
+     /tmp/ccFFokii.s:5030   .debug_str:00000000000003f8 .LASF27
+     /tmp/ccFFokii.s:5000   .debug_str:00000000000002c2 .LASF28
+     /tmp/ccFFokii.s:5174   .debug_str:00000000000009d9 .LASF29
+     /tmp/ccFFokii.s:5176   .debug_str:00000000000009f5 .LASF30
+     /tmp/ccFFokii.s:5238   .debug_str:0000000000000cce .LASF31
+     /tmp/ccFFokii.s:4954   .debug_str:00000000000000d9 .LASF32
+     /tmp/ccFFokii.s:4984   .debug_str:0000000000000214 .LASF33
+     /tmp/ccFFokii.s:5074   .debug_str:0000000000000564 .LASF34
+     /tmp/ccFFokii.s:5178   .debug_str:00000000000009fc .LASF36
+     /tmp/ccFFokii.s:5196   .debug_str:0000000000000b5f .LASF35
+     /tmp/ccFFokii.s:5144   .debug_str:0000000000000890 .LASF37
+     /tmp/ccFFokii.s:4950   .debug_str:00000000000000ce .LASF38
+     /tmp/ccFFokii.s:4940   .debug_str:000000000000003e .LASF39
+     /tmp/ccFFokii.s:4974   .debug_str:00000000000001c3 .LASF40
+     /tmp/ccFFokii.s:5246   .debug_str:0000000000000d13 .LASF41
+     /tmp/ccFFokii.s:5034   .debug_str:000000000000040e .LASF42
+     /tmp/ccFFokii.s:4960   .debug_str:000000000000012d .LASF43
+     /tmp/ccFFokii.s:5216   .debug_str:0000000000000c07 .LASF94
+     /tmp/ccFFokii.s:5114   .debug_str:0000000000000743 .LASF96
+     /tmp/ccFFokii.s:5044   .debug_str:000000000000046a .LASF44
+     /tmp/ccFFokii.s:5230   .debug_str:0000000000000c7e .LASF45
+     /tmp/ccFFokii.s:4938   .debug_str:0000000000000036 .LASF46
+     /tmp/ccFFokii.s:5078   .debug_str:0000000000000595 .LASF47
+GAS LISTING /tmp/ccFFokii.s 			page 37
+
+
+     /tmp/ccFFokii.s:5108   .debug_str:0000000000000726 .LASF48
+     /tmp/ccFFokii.s:5040   .debug_str:000000000000043d .LASF49
+     /tmp/ccFFokii.s:5212   .debug_str:0000000000000be4 .LASF50
+     /tmp/ccFFokii.s:5264   .debug_str:0000000000000dc4 .LASF53
+     /tmp/ccFFokii.s:5244   .debug_str:0000000000000d00 .LASF54
+     /tmp/ccFFokii.s:5008   .debug_str:0000000000000314 .LASF55
+     /tmp/ccFFokii.s:5122   .debug_str:00000000000007bb .LASF63
+     /tmp/ccFFokii.s:5220   .debug_str:0000000000000c16 .LASF161
+     /tmp/ccFFokii.s:5138   .debug_str:000000000000084a .LASF162
+     /tmp/ccFFokii.s:5012   .debug_str:0000000000000347 .LASF56
+     /tmp/ccFFokii.s:5026   .debug_str:00000000000003be .LASF60
+     /tmp/ccFFokii.s:5062   .debug_str:00000000000004fd .LASF57
+     /tmp/ccFFokii.s:4980   .debug_str:00000000000001eb .LASF58
+     /tmp/ccFFokii.s:5092   .debug_str:000000000000067e .LASF62
+     /tmp/ccFFokii.s:5168   .debug_str:00000000000009bb .LASF64
+     /tmp/ccFFokii.s:5102   .debug_str:00000000000006f6 .LASF65
+     /tmp/ccFFokii.s:5098   .debug_str:00000000000006eb .LASF66
+     /tmp/ccFFokii.s:5070   .debug_str:0000000000000539 .LASF67
+     /tmp/ccFFokii.s:5048   .debug_str:000000000000047d .LASF68
+     /tmp/ccFFokii.s:5142   .debug_str:0000000000000886 .LASF120
+     /tmp/ccFFokii.s:4942   .debug_str:000000000000005b .LASF121
+     /tmp/ccFFokii.s:5224   .debug_str:0000000000000c49 .LASF69
+     /tmp/ccFFokii.s:5154   .debug_str:000000000000090b .LASF70
+     /tmp/ccFFokii.s:4964   .debug_str:0000000000000167 .LASF71
+     /tmp/ccFFokii.s:4992   .debug_str:000000000000027c .LASF72
+     /tmp/ccFFokii.s:5124   .debug_str:00000000000007ce .LASF73
+     /tmp/ccFFokii.s:5248   .debug_str:0000000000000d34 .LASF74
+     /tmp/ccFFokii.s:5038   .debug_str:0000000000000433 .LASF75
+     /tmp/ccFFokii.s:5236   .debug_str:0000000000000ca9 .LASF76
+     /tmp/ccFFokii.s:5156   .debug_str:0000000000000932 .LASF77
+     /tmp/ccFFokii.s:5042   .debug_str:0000000000000443 .LASF78
+     /tmp/ccFFokii.s:5132   .debug_str:0000000000000816 .LASF79
+     /tmp/ccFFokii.s:4982   .debug_str:00000000000001f0 .LASF80
+     /tmp/ccFFokii.s:5002   .debug_str:00000000000002c7 .LASF81
+     /tmp/ccFFokii.s:5206   .debug_str:0000000000000b9e .LASF82
+     /tmp/ccFFokii.s:5256   .debug_str:0000000000000d7c .LASF83
+     /tmp/ccFFokii.s:5020   .debug_str:0000000000000375 .LASF84
+     /tmp/ccFFokii.s:4986   .debug_str:0000000000000235 .LASF85
+     /tmp/ccFFokii.s:5182   .debug_str:0000000000000a24 .LASF163
+     /tmp/ccFFokii.s:5170   .debug_str:00000000000009c0 .LASF86
+     /tmp/ccFFokii.s:5148   .debug_str:00000000000008b8 .LASF87
+     /tmp/ccFFokii.s:5184   .debug_str:0000000000000a2c .LASF88
+     /tmp/ccFFokii.s:4932   .debug_str:0000000000000000 .LASF89
+     /tmp/ccFFokii.s:4962   .debug_str:000000000000015b .LASF90
+     /tmp/ccFFokii.s:4948   .debug_str:00000000000000ad .LASF91
+     /tmp/ccFFokii.s:5082   .debug_str:00000000000005d4 .LASF92
+     /tmp/ccFFokii.s:5076   .debug_str:000000000000056c .LASF93
+     /tmp/ccFFokii.s:4968   .debug_str:000000000000017f .LASF95
+     /tmp/ccFFokii.s:5096   .debug_str:00000000000006d1 .LASF97
+     /tmp/ccFFokii.s:5190   .debug_str:0000000000000a6c .LASF138
+     /tmp/ccFFokii.s:5072   .debug_str:0000000000000556 .LASF98
+     /tmp/ccFFokii.s:5158   .debug_str:000000000000093d .LASF99
+     /tmp/ccFFokii.s:4934   .debug_str:0000000000000021 .LASF100
+     /tmp/ccFFokii.s:5058   .debug_str:00000000000004e1 .LASF101
+     /tmp/ccFFokii.s:5252   .debug_str:0000000000000d6b .LASF102
+     /tmp/ccFFokii.s:5204   .debug_str:0000000000000b96 .LASF103
+     /tmp/ccFFokii.s:5180   .debug_str:0000000000000a1b .LASF104
+GAS LISTING /tmp/ccFFokii.s 			page 38
+
+
+     /tmp/ccFFokii.s:5242   .debug_str:0000000000000cf3 .LASF105
+     /tmp/ccFFokii.s:5152   .debug_str:00000000000008fa .LASF106
+     /tmp/ccFFokii.s:4998   .debug_str:00000000000002b9 .LASF109
+     /tmp/ccFFokii.s:5208   .debug_str:0000000000000bc2 .LASF111
+     /tmp/ccFFokii.s:4994   .debug_str:00000000000002a2 .LASF107
+     /tmp/ccFFokii.s:5028   .debug_str:00000000000003c6 .LASF108
+     /tmp/ccFFokii.s:5218   .debug_str:0000000000000c0e .LASF110
+     /tmp/ccFFokii.s:5214   .debug_str:0000000000000beb .LASF112
+     /tmp/ccFFokii.s:5202   .debug_str:0000000000000b78 .LASF113
+     /tmp/ccFFokii.s:5112   .debug_str:0000000000000733 .LASF114
+     /tmp/ccFFokii.s:5134   .debug_str:000000000000081f .LASF115
+     /tmp/ccFFokii.s:5228   .debug_str:0000000000000c68 .LASF116
+     /tmp/ccFFokii.s:5006   .debug_str:00000000000002e5 .LASF117
+     /tmp/ccFFokii.s:4958   .debug_str:000000000000010d .LASF118
+     /tmp/ccFFokii.s:5130   .debug_str:00000000000007f2 .LASF119
+     /tmp/ccFFokii.s:5260   .debug_str:0000000000000d98 .LASF122
+     /tmp/ccFFokii.s:4988   .debug_str:0000000000000242 .LASF123
+     /tmp/ccFFokii.s:5188   .debug_str:0000000000000a43 .LASF124
+     /tmp/ccFFokii.s:5136   .debug_str:0000000000000824 .LASF125
+     /tmp/ccFFokii.s:4972   .debug_str:000000000000019b .LASF126
+     /tmp/ccFFokii.s:5222   .debug_str:0000000000000c1f .LASF127
+     /tmp/ccFFokii.s:5194   .debug_str:0000000000000b38 .LASF128
+     /tmp/ccFFokii.s:5094   .debug_str:00000000000006aa .LASF129
+     /tmp/ccFFokii.s:5120   .debug_str:0000000000000789 .LASF130
+     /tmp/ccFFokii.s:5110   .debug_str:000000000000072e .LASF131
+     /tmp/ccFFokii.s:5100   .debug_str:00000000000006f0 .LASF132
+     /tmp/ccFFokii.s:5088   .debug_str:000000000000064c .LASF136
+     /tmp/ccFFokii.s:5050   .debug_str:000000000000049e .LASF133
+     /tmp/ccFFokii.s:5104   .debug_str:00000000000006fb .LASF134
+     /tmp/ccFFokii.s:5022   .debug_str:00000000000003a4 .LASF135
+     /tmp/ccFFokii.s:5250   .debug_str:0000000000000d57 .LASF137
+     /tmp/ccFFokii.s:5090   .debug_str:000000000000065c .LASF164
+     /tmp/ccFFokii.s:5234   .debug_str:0000000000000ca3 .LASF139
+     /tmp/ccFFokii.s:4946   .debug_str:0000000000000083 .LASF165
+     /tmp/ccFFokii.s:5198   .debug_str:0000000000000b68 .LASF140
+     /tmp/ccFFokii.s:5084   .debug_str:00000000000005e7 .LASF141
+     /tmp/ccFFokii.s:985    .text:000000000000057c .LFB44
+     /tmp/ccFFokii.s:1011   .text:00000000000005b0 .LFE44
+     /tmp/ccFFokii.s:1001   .text:00000000000005a0 .LVL90
+     /tmp/ccFFokii.s:4956   .debug_str:00000000000000e3 .LASF142
+     /tmp/ccFFokii.s:9      .text:0000000000000000 .LFB43
+     /tmp/ccFFokii.s:53     .text:0000000000000040 .LFE43
+     /tmp/ccFFokii.s:5036   .debug_str:0000000000000424 .LASF143
+     /tmp/ccFFokii.s:5254   .debug_str:0000000000000d71 .LASF144
+     /tmp/ccFFokii.s:38     .text:000000000000002c .LBB38
+     /tmp/ccFFokii.s:49     .text:000000000000003c .LBE38
+     /tmp/ccFFokii.s:4321   .debug_loc:0000000000000000 .LLST0
+     /tmp/ccFFokii.s:5018   .debug_str:0000000000000370 .LASF145
+     /tmp/ccFFokii.s:5160   .debug_str:0000000000000953 .LASF149
+     /tmp/ccFFokii.s:5262   .debug_str:0000000000000dbc .LASF146
+     /tmp/ccFFokii.s:4952   .debug_str:00000000000000d4 .LASF147
+     /tmp/ccFFokii.s:5052   .debug_str:00000000000004b1 .LASF148
+     /tmp/ccFFokii.s:5086   .debug_str:0000000000000620 .LASF150
+     /tmp/ccFFokii.s:5014   .debug_str:000000000000035a .LASF151
+     /tmp/ccFFokii.s:5080   .debug_str:00000000000005b4 .LASF152
+     /tmp/ccFFokii.s:5066   .debug_str:0000000000000509 .LASF153
+     /tmp/ccFFokii.s:876    .text:00000000000004e0 .LFB25
+GAS LISTING /tmp/ccFFokii.s 			page 39
+
+
+     /tmp/ccFFokii.s:980    .text:000000000000057c .LFE25
+     /tmp/ccFFokii.s:4330   .debug_loc:000000000000002c .LLST32
+     /tmp/ccFFokii.s:5240   .debug_str:0000000000000cec .LASF154
+     /tmp/ccFFokii.s:4348   .debug_loc:0000000000000078 .LLST33
+     /tmp/ccFFokii.s:901    .text:000000000000050c .LBB58
+     /tmp/ccFFokii.s:919    .text:0000000000000520 .LBE58
+     /tmp/ccFFokii.s:4363   .debug_loc:00000000000000c1 .LLST34
+     /tmp/ccFFokii.s:4377   .debug_loc:00000000000000fa .LLST35
+     /tmp/ccFFokii.s:903    .text:000000000000050c .LBB60
+     /tmp/ccFFokii.s:910    .text:0000000000000514 .LBE60
+     /tmp/ccFFokii.s:4384   .debug_loc:000000000000011d .LLST36
+     /tmp/ccFFokii.s:921    .text:0000000000000520 .LBB62
+     /tmp/ccFFokii.s:4916   .debug_ranges:0000000000000000 .Ldebug_ranges0
+     /tmp/ccFFokii.s:4393   .debug_loc:0000000000000142 .LLST37
+     /tmp/ccFFokii.s:4404   .debug_loc:0000000000000178 .LLST38
+     /tmp/ccFFokii.s:4419   .debug_loc:00000000000001c0 .LLST39
+     /tmp/ccFFokii.s:927    .text:000000000000052c .LBB64
+     /tmp/ccFFokii.s:934    .text:0000000000000534 .LBE64
+     /tmp/ccFFokii.s:4430   .debug_loc:00000000000001f6 .LLST40
+     /tmp/ccFFokii.s:4438   .debug_loc:000000000000021a .LLST41
+     /tmp/ccFFokii.s:4445   .debug_loc:000000000000023d .LLST42
+     /tmp/ccFFokii.s:926    .text:000000000000052c .LVL83
+     /tmp/ccFFokii.s:898    .text:0000000000000508 .LVL78
+     /tmp/ccFFokii.s:729    .text:000000000000041c .LFB24
+     /tmp/ccFFokii.s:817    .text:0000000000000498 .LFE24
+     /tmp/ccFFokii.s:4452   .debug_loc:0000000000000260 .LLST27
+     /tmp/ccFFokii.s:760    .text:0000000000000450 .LBB51
+     /tmp/ccFFokii.s:766    .text:0000000000000454 .LBE51
+     /tmp/ccFFokii.s:4470   .debug_loc:00000000000002ac .LLST28
+     /tmp/ccFFokii.s:770    .text:0000000000000458 .LBB53
+     /tmp/ccFFokii.s:779    .text:0000000000000460 .LBE53
+     /tmp/ccFFokii.s:4479   .debug_loc:00000000000002d1 .LLST29
+     /tmp/ccFFokii.s:789    .text:0000000000000470 .LBB55
+     /tmp/ccFFokii.s:801    .text:0000000000000480 .LBE55
+     /tmp/ccFFokii.s:4488   .debug_loc:00000000000002f6 .LLST30
+     /tmp/ccFFokii.s:756    .text:0000000000000450 .LVL64
+     /tmp/ccFFokii.s:784    .text:000000000000046c .LVL68
+     /tmp/ccFFokii.s:823    .text:0000000000000498 .LFB23
+     /tmp/ccFFokii.s:870    .text:00000000000004e0 .LFE23
+     /tmp/ccFFokii.s:837    .text:00000000000004ac .LBB57
+     /tmp/ccFFokii.s:856    .text:00000000000004cc .LBE57
+     /tmp/ccFFokii.s:4497   .debug_loc:000000000000031b .LLST31
+     /tmp/ccFFokii.s:848    .text:00000000000004c4 .LVL73
+     /tmp/ccFFokii.s:628    .text:0000000000000390 .LFB22
+     /tmp/ccFFokii.s:723    .text:000000000000041c .LFE22
+     /tmp/ccFFokii.s:4504   .debug_loc:000000000000033e .LLST23
+     /tmp/ccFFokii.s:651    .text:00000000000003b0 .LBB47
+     /tmp/ccFFokii.s:657    .text:00000000000003b4 .LBE47
+     /tmp/ccFFokii.s:4522   .debug_loc:000000000000038a .LLST24
+     /tmp/ccFFokii.s:670    .text:00000000000003c8 .LBB49
+     /tmp/ccFFokii.s:709    .text:0000000000000408 .LBE49
+     /tmp/ccFFokii.s:4531   .debug_loc:00000000000003af .LLST25
+     /tmp/ccFFokii.s:4545   .debug_loc:00000000000003e8 .LLST26
+     /tmp/ccFFokii.s:664    .text:00000000000003c4 .LVL53
+     /tmp/ccFFokii.s:599    .text:0000000000000370 .LFB21
+     /tmp/ccFFokii.s:622    .text:0000000000000390 .LFE21
+     /tmp/ccFFokii.s:4561   .debug_loc:0000000000000432 .LLST22
+GAS LISTING /tmp/ccFFokii.s 			page 40
+
+
+     /tmp/ccFFokii.s:570    .text:0000000000000350 .LFB20
+     /tmp/ccFFokii.s:593    .text:0000000000000370 .LFE20
+     /tmp/ccFFokii.s:4575   .debug_loc:000000000000046b .LLST21
+     /tmp/ccFFokii.s:509    .text:0000000000000300 .LFB19
+     /tmp/ccFFokii.s:564    .text:0000000000000350 .LFE19
+     /tmp/ccFFokii.s:4589   .debug_loc:00000000000004a4 .LLST20
+     /tmp/ccFFokii.s:430    .text:0000000000000290 .LFB18
+     /tmp/ccFFokii.s:469    .text:00000000000002d0 .LFE18
+     /tmp/ccFFokii.s:4625   .debug_loc:000000000000052f .LLST17
+     /tmp/ccFFokii.s:5210   .debug_str:0000000000000bdf .LASF155
+     /tmp/ccFFokii.s:4639   .debug_loc:0000000000000568 .LLST18
+     /tmp/ccFFokii.s:458    .text:00000000000002c0 .LVL37
+     /tmp/ccFFokii.s:371    .text:0000000000000230 .LFB17
+     /tmp/ccFFokii.s:424    .text:0000000000000290 .LFE17
+     /tmp/ccFFokii.s:4653   .debug_loc:00000000000005a1 .LLST16
+     /tmp/ccFFokii.s:413    .text:0000000000000280 .LVL35
+     /tmp/ccFFokii.s:475    .text:00000000000002d0 .LFB16
+     /tmp/ccFFokii.s:503    .text:0000000000000300 .LFE16
+     /tmp/ccFFokii.s:4667   .debug_loc:00000000000005da .LLST19
+     /tmp/ccFFokii.s:492    .text:00000000000002f0 .LVL39
+     /tmp/ccFFokii.s:320    .text:00000000000001d4 .LFB15
+     /tmp/ccFFokii.s:365    .text:0000000000000230 .LFE15
+     /tmp/ccFFokii.s:4681   .debug_loc:0000000000000613 .LLST15
+     /tmp/ccFFokii.s:338    .text:00000000000001f4 .LVL31
+     /tmp/ccFFokii.s:351    .text:000000000000021c .LVL32
+     /tmp/ccFFokii.s:164    .text:00000000000000d4 .LFB14
+     /tmp/ccFFokii.s:314    .text:00000000000001d4 .LFE14
+     /tmp/ccFFokii.s:4699   .debug_loc:000000000000065f .LLST6
+     /tmp/ccFFokii.s:4721   .debug_loc:00000000000006be .LLST7
+     /tmp/ccFFokii.s:4743   .debug_loc:000000000000071d .LLST8
+     /tmp/ccFFokii.s:4754   .debug_loc:0000000000000753 .LLST9
+     /tmp/ccFFokii.s:4765   .debug_loc:0000000000000789 .LLST10
+     /tmp/ccFFokii.s:4789   .debug_loc:00000000000007f9 .LLST11
+     /tmp/ccFFokii.s:205    .text:0000000000000124 .LBB45
+     /tmp/ccFFokii.s:212    .text:000000000000012c .LBE45
+     /tmp/ccFFokii.s:4813   .debug_loc:0000000000000869 .LLST12
+     /tmp/ccFFokii.s:4821   .debug_loc:000000000000088d .LLST13
+     /tmp/ccFFokii.s:4828   .debug_loc:00000000000008b0 .LLST14
+     /tmp/ccFFokii.s:192    .text:000000000000010c .LVL17
+     /tmp/ccFFokii.s:204    .text:0000000000000124 .LVL18
+     /tmp/ccFFokii.s:262    .text:0000000000000174 .LVL24
+     /tmp/ccFFokii.s:275    .text:000000000000019c .LVL25
+     /tmp/ccFFokii.s:59     .text:0000000000000040 .LFB13
+     /tmp/ccFFokii.s:158    .text:00000000000000d4 .LFE13
+     /tmp/ccFFokii.s:4835   .debug_loc:00000000000008d3 .LLST1
+     /tmp/ccFFokii.s:5064   .debug_str:0000000000000502 .LASF156
+     /tmp/ccFFokii.s:4857   .debug_loc:0000000000000932 .LLST2
+     /tmp/ccFFokii.s:78     .text:000000000000005c .LBB41
+     /tmp/ccFFokii.s:4864   .debug_loc:0000000000000955 .LLST3
+     /tmp/ccFFokii.s:4885   .debug_loc:00000000000009a4 .LLST4
+     /tmp/ccFFokii.s:4896   .debug_loc:00000000000009da .LLST5
+     /tmp/ccFFokii.s:98     .text:000000000000007c .LVL8
+     /tmp/ccFFokii.s:106    .text:0000000000000088 .LVL9
+     /tmp/ccFFokii.s:124    .text:00000000000000ac .LVL10
+     /tmp/ccFFokii.s:5056   .debug_str:00000000000004c8 .LASF166
+     /tmp/ccFFokii.s:37     .text:000000000000002c .LVL1
+     /tmp/ccFFokii.s:46     .text:000000000000003c .LVL2
+GAS LISTING /tmp/ccFFokii.s 			page 41
+
+
+     /tmp/ccFFokii.s:879    .text:00000000000004e0 .LVL76
+     /tmp/ccFFokii.s:896    .text:0000000000000500 .LVL77
+     /tmp/ccFFokii.s:914    .text:0000000000000518 .LVL81
+     /tmp/ccFFokii.s:917    .text:0000000000000520 .LVL82
+     /tmp/ccFFokii.s:958    .text:000000000000055c .LVL87
+     /tmp/ccFFokii.s:964    .text:0000000000000568 .LVL88
+     /tmp/ccFFokii.s:900    .text:000000000000050c .LVL79
+     /tmp/ccFFokii.s:908    .text:0000000000000514 .LVL80
+     /tmp/ccFFokii.s:943    .text:000000000000054c .LVL85
+     /tmp/ccFFokii.s:973    .text:0000000000000578 .LVL89
+     /tmp/ccFFokii.s:932    .text:0000000000000534 .LVL84
+     /tmp/ccFFokii.s:949    .text:0000000000000550 .LVL86
+     /tmp/ccFFokii.s:732    .text:000000000000041c .LVL62
+     /tmp/ccFFokii.s:747    .text:000000000000043c .LVL63
+     /tmp/ccFFokii.s:810    .text:000000000000048c .LVL71
+     /tmp/ccFFokii.s:764    .text:0000000000000454 .LVL65
+     /tmp/ccFFokii.s:769    .text:0000000000000458 .LVL66
+     /tmp/ccFFokii.s:777    .text:0000000000000460 .LVL67
+     /tmp/ccFFokii.s:788    .text:0000000000000470 .LVL69
+     /tmp/ccFFokii.s:798    .text:0000000000000480 .LVL70
+     /tmp/ccFFokii.s:840    .text:00000000000004b4 .LVL72
+     /tmp/ccFFokii.s:865    .text:00000000000004d8 .LVL75
+     /tmp/ccFFokii.s:631    .text:0000000000000390 .LVL50
+     /tmp/ccFFokii.s:647    .text:00000000000003b0 .LVL51
+     /tmp/ccFFokii.s:718    .text:0000000000000414 .LVL61
+     /tmp/ccFFokii.s:655    .text:00000000000003b4 .LVL52
+     /tmp/ccFFokii.s:669    .text:00000000000003c8 .LVL54
+     /tmp/ccFFokii.s:676    .text:00000000000003d4 .LVL56
+     /tmp/ccFFokii.s:698    .text:00000000000003f4 .LVL59
+     /tmp/ccFFokii.s:700    .text:00000000000003f8 .LVL60
+     /tmp/ccFFokii.s:602    .text:0000000000000370 .LVL48
+     /tmp/ccFFokii.s:612    .text:0000000000000380 .LVL49
+     /tmp/ccFFokii.s:573    .text:0000000000000350 .LVL46
+     /tmp/ccFFokii.s:583    .text:0000000000000360 .LVL47
+     /tmp/ccFFokii.s:512    .text:0000000000000300 .LVL40
+     /tmp/ccFFokii.s:533    .text:0000000000000328 .LVL41
+     /tmp/ccFFokii.s:543    .text:0000000000000334 .LVL42
+     /tmp/ccFFokii.s:555    .text:0000000000000344 .LVL43
+     /tmp/ccFFokii.s:557    .text:0000000000000348 .LVL44
+     /tmp/ccFFokii.s:561    .text:000000000000034c .LVL45
+     /tmp/ccFFokii.s:433    .text:0000000000000290 .LVL36
+     /tmp/ccFFokii.s:374    .text:0000000000000230 .LVL34
+     /tmp/ccFFokii.s:478    .text:00000000000002d0 .LVL38
+     /tmp/ccFFokii.s:323    .text:00000000000001d4 .LVL30
+     /tmp/ccFFokii.s:360    .text:0000000000000228 .LVL33
+     /tmp/ccFFokii.s:167    .text:00000000000000d4 .LVL15
+     /tmp/ccFFokii.s:288    .text:00000000000001ac .LVL27
+     /tmp/ccFFokii.s:295    .text:00000000000001b8 .LVL29
+     /tmp/ccFFokii.s:291    .text:00000000000001b0 .LVL28
+     /tmp/ccFFokii.s:188    .text:0000000000000104 .LVL16
+     /tmp/ccFFokii.s:285    .text:00000000000001a8 .LVL26
+     /tmp/ccFFokii.s:210    .text:000000000000012c .LVL19
+     /tmp/ccFFokii.s:220    .text:0000000000000138 .LVL21
+     /tmp/ccFFokii.s:235    .text:000000000000014c .LVL22
+     /tmp/ccFFokii.s:241    .text:0000000000000154 .LVL23
+     /tmp/ccFFokii.s:216    .text:0000000000000130 .LVL20
+     /tmp/ccFFokii.s:62     .text:0000000000000040 .LVL3
+GAS LISTING /tmp/ccFFokii.s 			page 42
+
+
+     /tmp/ccFFokii.s:82     .text:0000000000000060 .LVL5
+     /tmp/ccFFokii.s:135    .text:00000000000000b8 .LVL11
+     /tmp/ccFFokii.s:142    .text:00000000000000c4 .LVL13
+     /tmp/ccFFokii.s:138    .text:00000000000000bc .LVL12
+     /tmp/ccFFokii.s:77     .text:000000000000005c .LVL4
+     /tmp/ccFFokii.s:85     .text:0000000000000064 .LVL6
+     /tmp/ccFFokii.s:150    .text:00000000000000cc .LVL14
+     /tmp/ccFFokii.s:95     .text:0000000000000074 .LVL7
+     /tmp/ccFFokii.s:1033   .debug_info:0000000000000000 .Ldebug_info0
+     /tmp/ccFFokii.s:101    .text:000000000000007c .LBE41
+     /tmp/ccFFokii.s:145    .text:00000000000000c4 .LBB44
+     /tmp/ccFFokii.s:156    .text:00000000000000d4 .LBE44
+     /tmp/ccFFokii.s:946    .text:000000000000054c .LBE62
+     /tmp/ccFFokii.s:967    .text:0000000000000568 .LBB67
+     /tmp/ccFFokii.s:975    .text:0000000000000578 .LBE67
+
+UNDEFINED SYMBOLS
+_ZN11KernelClassdlEPv
+_ZNK12KernelThread10isFinishedEv
+_ZN9Scheduler3putEP12KernelThread
+_ZN12KernelThread7runningE
+_ZN5Timer3nowEv
+_ZN11KernelClassnwEm
+_ZN9Scheduler3getEv
+_ZN12KernelThread16timeSliceCounterE
+_ZN12KernelThread13contextSwitchEPNS_7ContextES1_

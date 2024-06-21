@@ -1,0 +1,479 @@
+GAS LISTING /tmp/cc4Pt5tV.s 			page 1
+
+
+   1              		.file	"KernelClass.cpp"
+   2              		.option pic
+   3              		.option norelax
+   4              		.text
+   5              	.Ltext0:
+   6              		.align	2
+   7              		.globl	_Z7kmallocm
+   9              	_Z7kmallocm:
+  10              	.LFB4:
+  11              		.file 1 "src/KernelClass.cpp"
+   1:src/KernelClass.cpp **** #include "../h/KernelClass.hpp"
+   2:src/KernelClass.cpp **** #include "../h/MemoryAllocator.hpp"
+   3:src/KernelClass.cpp **** 
+   4:src/KernelClass.cpp **** void *KernelClass::operator new(size_t size) {
+   5:src/KernelClass.cpp ****     return kmalloc(size);
+   6:src/KernelClass.cpp **** }
+   7:src/KernelClass.cpp **** 
+   8:src/KernelClass.cpp **** void *KernelClass::operator new[](size_t size) {
+   9:src/KernelClass.cpp ****     return kmalloc(size);
+  10:src/KernelClass.cpp **** }
+  11:src/KernelClass.cpp **** 
+  12:src/KernelClass.cpp **** void KernelClass::operator delete(void *memory) {
+  13:src/KernelClass.cpp ****     kfree(memory);
+  14:src/KernelClass.cpp **** }
+  15:src/KernelClass.cpp **** 
+  16:src/KernelClass.cpp **** void KernelClass::operator delete[](void *memory) {
+  17:src/KernelClass.cpp ****     kfree(memory);
+  18:src/KernelClass.cpp **** }
+  19:src/KernelClass.cpp **** 
+  20:src/KernelClass.cpp **** void *kmalloc(size_t size) {
+  12              		.loc 1 20 28
+  13              		.cfi_startproc
+  14              	.LVL0:
+  15 0000 130101FE 		addi	sp,sp,-32
+  16              		.cfi_def_cfa_offset 32
+  17 0004 233C1100 		sd	ra,24(sp)
+  18 0008 23388100 		sd	s0,16(sp)
+  19 000c 23349100 		sd	s1,8(sp)
+  20              		.cfi_offset 1, -8
+  21              		.cfi_offset 8, -16
+  22              		.cfi_offset 9, -24
+  23 0010 13040102 		addi	s0,sp,32
+  24              		.cfi_def_cfa 8, 0
+  25 0014 93040500 		mv	s1,a0
+  21:src/KernelClass.cpp ****     return MemoryAllocator::getInstance().malloc(size);
+  26              		.loc 1 21 5
+  27              		.loc 1 21 41 is_stmt 0
+  28 0018 97000000 		call	_ZN15MemoryAllocator11getInstanceEv@plt
+  28      E7800000 
+  29              	.LVL1:
+  30              		.loc 1 21 49
+  31 0020 93850400 		mv	a1,s1
+  32 0024 97000000 		call	_ZN15MemoryAllocator6mallocEm@plt
+  32      E7800000 
+  33              	.LVL2:
+  22:src/KernelClass.cpp **** }
+  34              		.loc 1 22 1
+GAS LISTING /tmp/cc4Pt5tV.s 			page 2
+
+
+  35 002c 83308101 		ld	ra,24(sp)
+  36              		.cfi_restore 1
+  37 0030 03340101 		ld	s0,16(sp)
+  38              		.cfi_restore 8
+  39              		.cfi_def_cfa 2, 32
+  40 0034 83348100 		ld	s1,8(sp)
+  41              		.cfi_restore 9
+  42              	.LVL3:
+  43 0038 13010102 		addi	sp,sp,32
+  44              		.cfi_def_cfa_offset 0
+  45 003c 67800000 		jr	ra
+  46              		.cfi_endproc
+  47              	.LFE4:
+  49              		.align	2
+  50              		.globl	_ZN11KernelClassnwEm
+  52              	_ZN11KernelClassnwEm:
+  53              	.LFB0:
+   4:src/KernelClass.cpp ****     return kmalloc(size);
+  54              		.loc 1 4 46 is_stmt 1
+  55              		.cfi_startproc
+  56              	.LVL4:
+  57 0040 130101FF 		addi	sp,sp,-16
+  58              		.cfi_def_cfa_offset 16
+  59 0044 23341100 		sd	ra,8(sp)
+  60 0048 23308100 		sd	s0,0(sp)
+  61              		.cfi_offset 1, -8
+  62              		.cfi_offset 8, -16
+  63 004c 13040101 		addi	s0,sp,16
+  64              		.cfi_def_cfa 8, 0
+   5:src/KernelClass.cpp **** }
+  65              		.loc 1 5 5
+   5:src/KernelClass.cpp **** }
+  66              		.loc 1 5 19 is_stmt 0
+  67 0050 97000000 		call	_Z7kmallocm
+  67      E7800000 
+  68              	.LVL5:
+   6:src/KernelClass.cpp **** 
+  69              		.loc 1 6 1
+  70 0058 83308100 		ld	ra,8(sp)
+  71              		.cfi_restore 1
+  72 005c 03340100 		ld	s0,0(sp)
+  73              		.cfi_restore 8
+  74              		.cfi_def_cfa 2, 16
+  75 0060 13010101 		addi	sp,sp,16
+  76              		.cfi_def_cfa_offset 0
+  77 0064 67800000 		jr	ra
+  78              		.cfi_endproc
+  79              	.LFE0:
+  81              		.align	2
+  82              		.globl	_ZN11KernelClassnaEm
+  84              	_ZN11KernelClassnaEm:
+  85              	.LFB1:
+   8:src/KernelClass.cpp ****     return kmalloc(size);
+  86              		.loc 1 8 48 is_stmt 1
+  87              		.cfi_startproc
+  88              	.LVL6:
+  89 0068 130101FF 		addi	sp,sp,-16
+GAS LISTING /tmp/cc4Pt5tV.s 			page 3
+
+
+  90              		.cfi_def_cfa_offset 16
+  91 006c 23341100 		sd	ra,8(sp)
+  92 0070 23308100 		sd	s0,0(sp)
+  93              		.cfi_offset 1, -8
+  94              		.cfi_offset 8, -16
+  95 0074 13040101 		addi	s0,sp,16
+  96              		.cfi_def_cfa 8, 0
+   9:src/KernelClass.cpp **** }
+  97              		.loc 1 9 5
+   9:src/KernelClass.cpp **** }
+  98              		.loc 1 9 19 is_stmt 0
+  99 0078 97000000 		call	_Z7kmallocm
+  99      E7800000 
+ 100              	.LVL7:
+  10:src/KernelClass.cpp **** 
+ 101              		.loc 1 10 1
+ 102 0080 83308100 		ld	ra,8(sp)
+ 103              		.cfi_restore 1
+ 104 0084 03340100 		ld	s0,0(sp)
+ 105              		.cfi_restore 8
+ 106              		.cfi_def_cfa 2, 16
+ 107 0088 13010101 		addi	sp,sp,16
+ 108              		.cfi_def_cfa_offset 0
+ 109 008c 67800000 		jr	ra
+ 110              		.cfi_endproc
+ 111              	.LFE1:
+ 113              		.align	2
+ 114              		.globl	_Z5kfreePv
+ 116              	_Z5kfreePv:
+ 117              	.LFB5:
+  23:src/KernelClass.cpp **** 
+  24:src/KernelClass.cpp **** void kfree(void *memory) {
+ 118              		.loc 1 24 26 is_stmt 1
+ 119              		.cfi_startproc
+ 120              	.LVL8:
+ 121 0090 130101FE 		addi	sp,sp,-32
+ 122              		.cfi_def_cfa_offset 32
+ 123 0094 233C1100 		sd	ra,24(sp)
+ 124 0098 23388100 		sd	s0,16(sp)
+ 125 009c 23349100 		sd	s1,8(sp)
+ 126              		.cfi_offset 1, -8
+ 127              		.cfi_offset 8, -16
+ 128              		.cfi_offset 9, -24
+ 129 00a0 13040102 		addi	s0,sp,32
+ 130              		.cfi_def_cfa 8, 0
+ 131 00a4 93040500 		mv	s1,a0
+  25:src/KernelClass.cpp ****     MemoryAllocator::getInstance().free(memory);
+ 132              		.loc 1 25 5
+ 133              		.loc 1 25 34 is_stmt 0
+ 134 00a8 97000000 		call	_ZN15MemoryAllocator11getInstanceEv@plt
+ 134      E7800000 
+ 135              	.LVL9:
+ 136              		.loc 1 25 40
+ 137 00b0 93850400 		mv	a1,s1
+ 138 00b4 97000000 		call	_ZN15MemoryAllocator4freeEPv@plt
+ 138      E7800000 
+ 139              	.LVL10:
+GAS LISTING /tmp/cc4Pt5tV.s 			page 4
+
+
+  26:src/KernelClass.cpp **** }
+ 140              		.loc 1 26 1
+ 141 00bc 83308101 		ld	ra,24(sp)
+ 142              		.cfi_restore 1
+ 143 00c0 03340101 		ld	s0,16(sp)
+ 144              		.cfi_restore 8
+ 145              		.cfi_def_cfa 2, 32
+ 146 00c4 83348100 		ld	s1,8(sp)
+ 147              		.cfi_restore 9
+ 148              	.LVL11:
+ 149 00c8 13010102 		addi	sp,sp,32
+ 150              		.cfi_def_cfa_offset 0
+ 151 00cc 67800000 		jr	ra
+ 152              		.cfi_endproc
+ 153              	.LFE5:
+ 155              		.align	2
+ 156              		.globl	_ZN11KernelClassdlEPv
+ 158              	_ZN11KernelClassdlEPv:
+ 159              	.LFB2:
+  12:src/KernelClass.cpp ****     kfree(memory);
+ 160              		.loc 1 12 49 is_stmt 1
+ 161              		.cfi_startproc
+ 162              	.LVL12:
+ 163 00d0 130101FF 		addi	sp,sp,-16
+ 164              		.cfi_def_cfa_offset 16
+ 165 00d4 23341100 		sd	ra,8(sp)
+ 166 00d8 23308100 		sd	s0,0(sp)
+ 167              		.cfi_offset 1, -8
+ 168              		.cfi_offset 8, -16
+ 169 00dc 13040101 		addi	s0,sp,16
+ 170              		.cfi_def_cfa 8, 0
+  13:src/KernelClass.cpp **** }
+ 171              		.loc 1 13 5
+  13:src/KernelClass.cpp **** }
+ 172              		.loc 1 13 10 is_stmt 0
+ 173 00e0 97000000 		call	_Z5kfreePv
+ 173      E7800000 
+ 174              	.LVL13:
+  14:src/KernelClass.cpp **** 
+ 175              		.loc 1 14 1
+ 176 00e8 83308100 		ld	ra,8(sp)
+ 177              		.cfi_restore 1
+ 178 00ec 03340100 		ld	s0,0(sp)
+ 179              		.cfi_restore 8
+ 180              		.cfi_def_cfa 2, 16
+ 181 00f0 13010101 		addi	sp,sp,16
+ 182              		.cfi_def_cfa_offset 0
+ 183 00f4 67800000 		jr	ra
+ 184              		.cfi_endproc
+ 185              	.LFE2:
+ 187              		.align	2
+ 188              		.globl	_ZN11KernelClassdaEPv
+ 190              	_ZN11KernelClassdaEPv:
+ 191              	.LFB3:
+  16:src/KernelClass.cpp ****     kfree(memory);
+ 192              		.loc 1 16 51 is_stmt 1
+ 193              		.cfi_startproc
+GAS LISTING /tmp/cc4Pt5tV.s 			page 5
+
+
+ 194              	.LVL14:
+ 195 00f8 130101FF 		addi	sp,sp,-16
+ 196              		.cfi_def_cfa_offset 16
+ 197 00fc 23341100 		sd	ra,8(sp)
+ 198 0100 23308100 		sd	s0,0(sp)
+ 199              		.cfi_offset 1, -8
+ 200              		.cfi_offset 8, -16
+ 201 0104 13040101 		addi	s0,sp,16
+ 202              		.cfi_def_cfa 8, 0
+  17:src/KernelClass.cpp **** }
+ 203              		.loc 1 17 5
+  17:src/KernelClass.cpp **** }
+ 204              		.loc 1 17 10 is_stmt 0
+ 205 0108 97000000 		call	_Z5kfreePv
+ 205      E7800000 
+ 206              	.LVL15:
+  18:src/KernelClass.cpp **** 
+ 207              		.loc 1 18 1
+ 208 0110 83308100 		ld	ra,8(sp)
+ 209              		.cfi_restore 1
+ 210 0114 03340100 		ld	s0,0(sp)
+ 211              		.cfi_restore 8
+ 212              		.cfi_def_cfa 2, 16
+ 213 0118 13010101 		addi	sp,sp,16
+ 214              		.cfi_def_cfa_offset 0
+ 215 011c 67800000 		jr	ra
+ 216              		.cfi_endproc
+ 217              	.LFE3:
+ 219              	.Letext0:
+ 220              		.file 2 "src/../h/../lib/hw.h"
+ 221              		.file 3 "src/../h/KernelClass.hpp"
+ 222              		.file 4 "src/../h/MemoryAllocator.hpp"
+GAS LISTING /tmp/cc4Pt5tV.s 			page 6
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 KernelClass.cpp
+     /tmp/cc4Pt5tV.s:9      .text:0000000000000000 _Z7kmallocm
+     /tmp/cc4Pt5tV.s:13     .text:0000000000000000 .L0 
+     /tmp/cc4Pt5tV.s:15     .text:0000000000000000 .L0 
+     /tmp/cc4Pt5tV.s:16     .text:0000000000000004 .L0 
+     /tmp/cc4Pt5tV.s:20     .text:0000000000000010 .L0 
+     /tmp/cc4Pt5tV.s:21     .text:0000000000000010 .L0 
+     /tmp/cc4Pt5tV.s:22     .text:0000000000000010 .L0 
+     /tmp/cc4Pt5tV.s:24     .text:0000000000000014 .L0 
+     /tmp/cc4Pt5tV.s:27     .text:0000000000000018 .L0 
+     /tmp/cc4Pt5tV.s:28     .text:0000000000000018 .L0 
+     /tmp/cc4Pt5tV.s:31     .text:0000000000000020 .L0 
+     /tmp/cc4Pt5tV.s:35     .text:000000000000002c .L0 
+     /tmp/cc4Pt5tV.s:36     .text:0000000000000030 .L0 
+     /tmp/cc4Pt5tV.s:38     .text:0000000000000034 .L0 
+     /tmp/cc4Pt5tV.s:39     .text:0000000000000034 .L0 
+     /tmp/cc4Pt5tV.s:41     .text:0000000000000038 .L0 
+     /tmp/cc4Pt5tV.s:44     .text:000000000000003c .L0 
+     /tmp/cc4Pt5tV.s:46     .text:0000000000000040 .L0 
+     /tmp/cc4Pt5tV.s:52     .text:0000000000000040 _ZN11KernelClassnwEm
+     /tmp/cc4Pt5tV.s:55     .text:0000000000000040 .L0 
+     /tmp/cc4Pt5tV.s:57     .text:0000000000000040 .L0 
+     /tmp/cc4Pt5tV.s:58     .text:0000000000000044 .L0 
+     /tmp/cc4Pt5tV.s:61     .text:000000000000004c .L0 
+     /tmp/cc4Pt5tV.s:62     .text:000000000000004c .L0 
+     /tmp/cc4Pt5tV.s:64     .text:0000000000000050 .L0 
+     /tmp/cc4Pt5tV.s:66     .text:0000000000000050 .L0 
+     /tmp/cc4Pt5tV.s:67     .text:0000000000000050 .L0 
+     /tmp/cc4Pt5tV.s:70     .text:0000000000000058 .L0 
+     /tmp/cc4Pt5tV.s:71     .text:000000000000005c .L0 
+     /tmp/cc4Pt5tV.s:73     .text:0000000000000060 .L0 
+     /tmp/cc4Pt5tV.s:74     .text:0000000000000060 .L0 
+     /tmp/cc4Pt5tV.s:76     .text:0000000000000064 .L0 
+     /tmp/cc4Pt5tV.s:78     .text:0000000000000068 .L0 
+     /tmp/cc4Pt5tV.s:84     .text:0000000000000068 _ZN11KernelClassnaEm
+     /tmp/cc4Pt5tV.s:87     .text:0000000000000068 .L0 
+     /tmp/cc4Pt5tV.s:89     .text:0000000000000068 .L0 
+     /tmp/cc4Pt5tV.s:90     .text:000000000000006c .L0 
+     /tmp/cc4Pt5tV.s:93     .text:0000000000000074 .L0 
+     /tmp/cc4Pt5tV.s:94     .text:0000000000000074 .L0 
+     /tmp/cc4Pt5tV.s:96     .text:0000000000000078 .L0 
+     /tmp/cc4Pt5tV.s:98     .text:0000000000000078 .L0 
+     /tmp/cc4Pt5tV.s:99     .text:0000000000000078 .L0 
+     /tmp/cc4Pt5tV.s:102    .text:0000000000000080 .L0 
+     /tmp/cc4Pt5tV.s:103    .text:0000000000000084 .L0 
+     /tmp/cc4Pt5tV.s:105    .text:0000000000000088 .L0 
+     /tmp/cc4Pt5tV.s:106    .text:0000000000000088 .L0 
+     /tmp/cc4Pt5tV.s:108    .text:000000000000008c .L0 
+     /tmp/cc4Pt5tV.s:110    .text:0000000000000090 .L0 
+     /tmp/cc4Pt5tV.s:116    .text:0000000000000090 _Z5kfreePv
+     /tmp/cc4Pt5tV.s:119    .text:0000000000000090 .L0 
+     /tmp/cc4Pt5tV.s:121    .text:0000000000000090 .L0 
+     /tmp/cc4Pt5tV.s:122    .text:0000000000000094 .L0 
+     /tmp/cc4Pt5tV.s:126    .text:00000000000000a0 .L0 
+     /tmp/cc4Pt5tV.s:127    .text:00000000000000a0 .L0 
+     /tmp/cc4Pt5tV.s:128    .text:00000000000000a0 .L0 
+GAS LISTING /tmp/cc4Pt5tV.s 			page 7
+
+
+     /tmp/cc4Pt5tV.s:130    .text:00000000000000a4 .L0 
+     /tmp/cc4Pt5tV.s:133    .text:00000000000000a8 .L0 
+     /tmp/cc4Pt5tV.s:134    .text:00000000000000a8 .L0 
+     /tmp/cc4Pt5tV.s:137    .text:00000000000000b0 .L0 
+     /tmp/cc4Pt5tV.s:141    .text:00000000000000bc .L0 
+     /tmp/cc4Pt5tV.s:142    .text:00000000000000c0 .L0 
+     /tmp/cc4Pt5tV.s:144    .text:00000000000000c4 .L0 
+     /tmp/cc4Pt5tV.s:145    .text:00000000000000c4 .L0 
+     /tmp/cc4Pt5tV.s:147    .text:00000000000000c8 .L0 
+     /tmp/cc4Pt5tV.s:150    .text:00000000000000cc .L0 
+     /tmp/cc4Pt5tV.s:152    .text:00000000000000d0 .L0 
+     /tmp/cc4Pt5tV.s:158    .text:00000000000000d0 _ZN11KernelClassdlEPv
+     /tmp/cc4Pt5tV.s:161    .text:00000000000000d0 .L0 
+     /tmp/cc4Pt5tV.s:163    .text:00000000000000d0 .L0 
+     /tmp/cc4Pt5tV.s:164    .text:00000000000000d4 .L0 
+     /tmp/cc4Pt5tV.s:167    .text:00000000000000dc .L0 
+     /tmp/cc4Pt5tV.s:168    .text:00000000000000dc .L0 
+     /tmp/cc4Pt5tV.s:170    .text:00000000000000e0 .L0 
+     /tmp/cc4Pt5tV.s:172    .text:00000000000000e0 .L0 
+     /tmp/cc4Pt5tV.s:173    .text:00000000000000e0 .L0 
+     /tmp/cc4Pt5tV.s:176    .text:00000000000000e8 .L0 
+     /tmp/cc4Pt5tV.s:177    .text:00000000000000ec .L0 
+     /tmp/cc4Pt5tV.s:179    .text:00000000000000f0 .L0 
+     /tmp/cc4Pt5tV.s:180    .text:00000000000000f0 .L0 
+     /tmp/cc4Pt5tV.s:182    .text:00000000000000f4 .L0 
+     /tmp/cc4Pt5tV.s:184    .text:00000000000000f8 .L0 
+     /tmp/cc4Pt5tV.s:190    .text:00000000000000f8 _ZN11KernelClassdaEPv
+     /tmp/cc4Pt5tV.s:193    .text:00000000000000f8 .L0 
+     /tmp/cc4Pt5tV.s:195    .text:00000000000000f8 .L0 
+     /tmp/cc4Pt5tV.s:196    .text:00000000000000fc .L0 
+     /tmp/cc4Pt5tV.s:199    .text:0000000000000104 .L0 
+     /tmp/cc4Pt5tV.s:200    .text:0000000000000104 .L0 
+     /tmp/cc4Pt5tV.s:202    .text:0000000000000108 .L0 
+     /tmp/cc4Pt5tV.s:204    .text:0000000000000108 .L0 
+     /tmp/cc4Pt5tV.s:205    .text:0000000000000108 .L0 
+     /tmp/cc4Pt5tV.s:208    .text:0000000000000110 .L0 
+     /tmp/cc4Pt5tV.s:209    .text:0000000000000114 .L0 
+     /tmp/cc4Pt5tV.s:211    .text:0000000000000118 .L0 
+     /tmp/cc4Pt5tV.s:212    .text:0000000000000118 .L0 
+     /tmp/cc4Pt5tV.s:214    .text:000000000000011c .L0 
+     /tmp/cc4Pt5tV.s:216    .text:0000000000000120 .L0 
+     /tmp/cc4Pt5tV.s:223    .text:0000000000000120 .L0 
+     /tmp/cc4Pt5tV.s:695    .debug_abbrev:0000000000000000 .Ldebug_abbrev0
+     /tmp/cc4Pt5tV.s:1397   .debug_str:0000000000000163 .LASF41
+     /tmp/cc4Pt5tV.s:1381   .debug_str:00000000000000dd .LASF42
+     /tmp/cc4Pt5tV.s:1391   .debug_str:0000000000000130 .LASF43
+     /tmp/cc4Pt5tV.s:5      .text:0000000000000000 .Ltext0
+     /tmp/cc4Pt5tV.s:219    .text:0000000000000120 .Letext0
+     /tmp/cc4Pt5tV.s:1351   .debug_line:0000000000000000 .Ldebug_line0
+     /tmp/cc4Pt5tV.s:1407   .debug_str:0000000000000272 .LASF0
+     /tmp/cc4Pt5tV.s:1389   .debug_str:000000000000011d .LASF1
+     /tmp/cc4Pt5tV.s:1383   .debug_str:00000000000000f1 .LASF2
+     /tmp/cc4Pt5tV.s:1365   .debug_str:0000000000000048 .LASF4
+     /tmp/cc4Pt5tV.s:1387   .debug_str:000000000000010b .LASF3
+     /tmp/cc4Pt5tV.s:1359   .debug_str:000000000000002e .LASF5
+     /tmp/cc4Pt5tV.s:1355   .debug_str:000000000000000b .LASF6
+     /tmp/cc4Pt5tV.s:1377   .debug_str:00000000000000bb .LASF7
+GAS LISTING /tmp/cc4Pt5tV.s 			page 8
+
+
+     /tmp/cc4Pt5tV.s:1415   .debug_str:00000000000002b9 .LASF8
+     /tmp/cc4Pt5tV.s:1363   .debug_str:000000000000003a .LASF9
+     /tmp/cc4Pt5tV.s:1449   .debug_str:00000000000003bb .LASF10
+     /tmp/cc4Pt5tV.s:1379   .debug_str:00000000000000ce .LASF11
+     /tmp/cc4Pt5tV.s:1435   .debug_str:0000000000000371 .LASF12
+     /tmp/cc4Pt5tV.s:1421   .debug_str:00000000000002eb .LASF13
+     /tmp/cc4Pt5tV.s:1393   .debug_str:000000000000014f .LASF14
+     /tmp/cc4Pt5tV.s:1373   .debug_str:0000000000000097 .LASF15
+     /tmp/cc4Pt5tV.s:1417   .debug_str:00000000000002c9 .LASF16
+     /tmp/cc4Pt5tV.s:1447   .debug_str:00000000000003af .LASF21
+     /tmp/cc4Pt5tV.s:1437   .debug_str:0000000000000381 .LASF17
+     /tmp/cc4Pt5tV.s:1367   .debug_str:000000000000004f .LASF19
+     /tmp/cc4Pt5tV.s:1441   .debug_str:0000000000000393 .LASF18
+     /tmp/cc4Pt5tV.s:1405   .debug_str:000000000000025d .LASF20
+     /tmp/cc4Pt5tV.s:1411   .debug_str:0000000000000285 .LASF29
+     /tmp/cc4Pt5tV.s:1401   .debug_str:0000000000000240 .LASF30
+     /tmp/cc4Pt5tV.s:1429   .debug_str:000000000000033a .LASF33
+     /tmp/cc4Pt5tV.s:1369   .debug_str:0000000000000064 .LASF35
+     /tmp/cc4Pt5tV.s:1357   .debug_str:000000000000001e .LASF22
+     /tmp/cc4Pt5tV.s:1385   .debug_str:00000000000000ff .LASF44
+     /tmp/cc4Pt5tV.s:1361   .debug_str:0000000000000035 .LASF23
+     /tmp/cc4Pt5tV.s:1375   .debug_str:00000000000000ad .LASF24
+     /tmp/cc4Pt5tV.s:1419   .debug_str:00000000000002df .LASF45
+     /tmp/cc4Pt5tV.s:1413   .debug_str:0000000000000295 .LASF46
+     /tmp/cc4Pt5tV.s:1403   .debug_str:0000000000000256 .LASF25
+     /tmp/cc4Pt5tV.s:1431   .debug_str:000000000000034d .LASF27
+     /tmp/cc4Pt5tV.s:1423   .debug_str:00000000000002fb .LASF26
+     /tmp/cc4Pt5tV.s:1371   .debug_str:000000000000007a .LASF28
+     /tmp/cc4Pt5tV.s:1399   .debug_str:0000000000000227 .LASF31
+     /tmp/cc4Pt5tV.s:1439   .debug_str:000000000000038e .LASF32
+     /tmp/cc4Pt5tV.s:1409   .debug_str:000000000000027f .LASF34
+     /tmp/cc4Pt5tV.s:1427   .debug_str:000000000000030c .LASF36
+     /tmp/cc4Pt5tV.s:1433   .debug_str:000000000000036b .LASF37
+     /tmp/cc4Pt5tV.s:1353   .debug_str:0000000000000000 .LASF38
+     /tmp/cc4Pt5tV.s:117    .text:0000000000000090 .LFB5
+     /tmp/cc4Pt5tV.s:153    .text:00000000000000d0 .LFE5
+     /tmp/cc4Pt5tV.s:1445   .debug_str:00000000000003a8 .LASF39
+     /tmp/cc4Pt5tV.s:1246   .debug_loc:0000000000000000 .LLST3
+     /tmp/cc4Pt5tV.s:135    .text:00000000000000b0 .LVL9
+     /tmp/cc4Pt5tV.s:139    .text:00000000000000bc .LVL10
+     /tmp/cc4Pt5tV.s:1395   .debug_str:000000000000015b .LASF47
+     /tmp/cc4Pt5tV.s:1425   .debug_str:0000000000000300 .LASF48
+     /tmp/cc4Pt5tV.s:10     .text:0000000000000000 .LFB4
+     /tmp/cc4Pt5tV.s:47     .text:0000000000000040 .LFE4
+     /tmp/cc4Pt5tV.s:1443   .debug_str:00000000000003a3 .LASF40
+     /tmp/cc4Pt5tV.s:1264   .debug_loc:000000000000004c .LLST0
+     /tmp/cc4Pt5tV.s:29     .text:0000000000000020 .LVL1
+     /tmp/cc4Pt5tV.s:33     .text:000000000000002c .LVL2
+     /tmp/cc4Pt5tV.s:191    .text:00000000000000f8 .LFB3
+     /tmp/cc4Pt5tV.s:217    .text:0000000000000120 .LFE3
+     /tmp/cc4Pt5tV.s:1282   .debug_loc:0000000000000098 .LLST5
+     /tmp/cc4Pt5tV.s:206    .text:0000000000000110 .LVL15
+     /tmp/cc4Pt5tV.s:159    .text:00000000000000d0 .LFB2
+     /tmp/cc4Pt5tV.s:185    .text:00000000000000f8 .LFE2
+     /tmp/cc4Pt5tV.s:1296   .debug_loc:00000000000000d1 .LLST4
+     /tmp/cc4Pt5tV.s:174    .text:00000000000000e8 .LVL13
+     /tmp/cc4Pt5tV.s:85     .text:0000000000000068 .LFB1
+GAS LISTING /tmp/cc4Pt5tV.s 			page 9
+
+
+     /tmp/cc4Pt5tV.s:111    .text:0000000000000090 .LFE1
+     /tmp/cc4Pt5tV.s:1310   .debug_loc:000000000000010a .LLST2
+     /tmp/cc4Pt5tV.s:100    .text:0000000000000080 .LVL7
+     /tmp/cc4Pt5tV.s:53     .text:0000000000000040 .LFB0
+     /tmp/cc4Pt5tV.s:79     .text:0000000000000068 .LFE0
+     /tmp/cc4Pt5tV.s:1324   .debug_loc:0000000000000143 .LLST1
+     /tmp/cc4Pt5tV.s:68     .text:0000000000000058 .LVL5
+     /tmp/cc4Pt5tV.s:120    .text:0000000000000090 .LVL8
+     /tmp/cc4Pt5tV.s:148    .text:00000000000000c8 .LVL11
+     /tmp/cc4Pt5tV.s:14     .text:0000000000000000 .LVL0
+     /tmp/cc4Pt5tV.s:42     .text:0000000000000038 .LVL3
+     /tmp/cc4Pt5tV.s:194    .text:00000000000000f8 .LVL14
+     /tmp/cc4Pt5tV.s:162    .text:00000000000000d0 .LVL12
+     /tmp/cc4Pt5tV.s:88     .text:0000000000000068 .LVL6
+     /tmp/cc4Pt5tV.s:56     .text:0000000000000040 .LVL4
+     /tmp/cc4Pt5tV.s:224    .debug_info:0000000000000000 .Ldebug_info0
+
+UNDEFINED SYMBOLS
+_ZN15MemoryAllocator11getInstanceEv
+_ZN15MemoryAllocator6mallocEm
+_ZN15MemoryAllocator4freeEPv
