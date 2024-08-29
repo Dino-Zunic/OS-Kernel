@@ -103,6 +103,7 @@ void RISCV::handleSupervisorTrap() {
                 break;
             case ABI_Index::TIME_SLEEP:
                 getAsleep().timedWait(arg1);
+                result = KernelThread::running->interruptResult;
                 break;
             case ABI_Index::GETC:
                 result = KernelConsole::getInput().take();
