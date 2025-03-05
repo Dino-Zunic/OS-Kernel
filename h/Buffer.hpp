@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_BUFFER_HPP
-#define NOVI_PROJEKAT_BUFFER_HPP
+#ifndef BUFFER_HPP
+#define BUFFER_HPP
 
 #include "KernelSemaphore.hpp"
 
@@ -55,4 +55,4 @@ private:
     int head, tail;
 };
 
-#endif //NOVI_PROJEKAT_BUFFER_HPP
+#endif // BUFFER_HPP
