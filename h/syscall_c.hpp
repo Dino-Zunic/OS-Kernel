@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_SYSCALL_C_HPP
-#define NOVI_PROJEKAT_SYSCALL_C_HPP
+#ifndef SYSCALL_C_HPP
+#define SYSCALL_C_HPP
 
 #include "../lib/hw.h"
 
@@ -95,4 +95,4 @@ extern void putc(char c);
 
 uint64 callException(ABI_Index arg0, uint64 arg1, uint64 arg2, uint64 arg3, uint64 arg4);
 
-#endif //NOVI_PROJEKAT_SYSCALL_C_HPP
+#endif // SYSCALL_C_HPP
