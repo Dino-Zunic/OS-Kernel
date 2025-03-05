@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_KERNELCONSOLE_HPP
-#define NOVI_PROJEKAT_KERNELCONSOLE_HPP
+#ifndef KERNELCONSOLE_HPP
+#define KERNELCONSOLE_HPP
 
 #include "KernelClass.hpp"
 #include "KernelSemaphore.hpp"
@@ -17,4 +17,4 @@ private:
     Buffer<char> output;
 };
 
-#endif //NOVI_PROJEKAT_KERNELCONSOLE_HPP
+#endif // KERNELCONSOLE_HPP
