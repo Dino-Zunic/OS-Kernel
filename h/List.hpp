@@ -1,5 +1,5 @@
-#ifndef PROJECT_BASE_V1_1_LIST_HPP
-#define PROJECT_BASE_V1_1_LIST_HPP
+#ifndef LIST_HPP
+#define LIST_HPP
 
 #include "KernelClass.hpp"
 
@@ -104,4 +104,4 @@ public:
     }
 };
 
-#endif //PROJECT_BASE_V1_1_LIST_HPP
+#endif // LIST_HPP
