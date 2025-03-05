@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_TIMER_HPP
-#define NOVI_PROJEKAT_TIMER_HPP
+#ifndef TIMER_HPP
+#define TIMER_HPP
 
 #include "../lib/hw.h"
 
@@ -12,4 +12,4 @@ private:
 };
 
 
-#endif //NOVI_PROJEKAT_TIMER_HPP
+#endif // TIMER_HPP
