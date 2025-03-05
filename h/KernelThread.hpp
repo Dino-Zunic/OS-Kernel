@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_KERNELTHREAD_HPP
-#define NOVI_PROJEKAT_KERNELTHREAD_HPP
+#ifndef KERNELTHREAD_HPP
+#define KERNELTHREAD_HPP
 
 #include "../lib/hw.h"
 #include "../h/KernelClass.hpp"
@@ -50,4 +50,4 @@ private:
     uint64 interruptResult;
 };
 
-#endif //NOVI_PROJEKAT_KERNELTHREAD_HPP
+#endif // KERNELTHREAD_HPP
