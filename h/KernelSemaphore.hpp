@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_KERNELSEMAPHORE_HPP
-#define NOVI_PROJEKAT_KERNELSEMAPHORE_HPP
+#ifndef KERNELSEMAPHORE_HPP
+#define KERNELSEMAPHORE_HPP
 
 #include "../h/List.hpp"
 
@@ -65,4 +65,4 @@ private:
     static void doSwitch(KernelThread *old);
 };
 
-#endif //NOVI_PROJEKAT_KERNELSEMAPHORE_HPP
+#endif // KERNELSEMAPHORE_HPP
