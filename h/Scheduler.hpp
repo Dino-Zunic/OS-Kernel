@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_SCHEDULER_HPP
-#define NOVI_PROJEKAT_SCHEDULER_HPP
+#ifndef SCHEDULER_HPP
+#define SCHEDULER_HPP
 
 #include "List.hpp"
 
@@ -13,4 +13,4 @@ public:
     static List<KernelThread> ready;
 };
 
-#endif //NOVI_PROJEKAT_SCHEDULER_HPP
+#endif // SCHEDULER_HPP
