@@ -1,5 +1,5 @@
-#ifndef PROJECT_BASE_V1_1_RISCV_HPP
-#define PROJECT_BASE_V1_1_RISCV_HPP
+#ifndef RISCV_HPP
+#define RISCV_HPP
 
 #include "../lib/hw.h"
 
@@ -118,4 +118,4 @@ private:
     static KernelSemaphore &getAsleep();
 };
 
-#endif //PROJECT_BASE_V1_1_RISCV_HPP
+#endif // RISCV_HPP
