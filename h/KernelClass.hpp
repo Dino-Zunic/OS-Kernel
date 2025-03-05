@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_KERNELCLASS_HPP
-#define NOVI_PROJEKAT_KERNELCLASS_HPP
+#ifndef KERNELCLASS_HPP
+#define KERNELCLASS_HPP
 
 #include "../lib/hw.h"
 
@@ -28,4 +28,4 @@ void *kmalloc(size_t size);
 void kfree(void *memory);
 
 
-#endif //NOVI_PROJEKAT_KERNELCLASS_HPP
+#endif // KERNELCLASS_HPP
