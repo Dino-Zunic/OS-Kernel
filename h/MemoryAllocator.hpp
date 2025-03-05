@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_MEMORYALLOCATOR_HPP
-#define NOVI_PROJEKAT_MEMORYALLOCATOR_HPP
+#ifndef MEMORYALLOCATOR_HPP
+#define MEMORYALLOCATOR_HPP
 
 #include "../lib/hw.h"
 
@@ -46,4 +46,4 @@ private:
     void merge(BlockHeader *block);
 };
 
-#endif //NOVI_PROJEKAT_MEMORYALLOCATOR_HPP
+#endif // MEMORYALLOCATOR_HPP
