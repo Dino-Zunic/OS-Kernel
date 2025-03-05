@@ -1,5 +1,5 @@
-#ifndef NOVI_PROJEKAT_SYSCALL_CPP_HPP
-#define NOVI_PROJEKAT_SYSCALL_CPP_HPP
+#ifndef SYSCALL_CPP_HPP
+#define SYSCALL_CPP_HPP
 
 #include "syscall_c.hpp"
 
@@ -68,4 +68,4 @@ public:
     static void putc (char);
 };
 
-#endif //NOVI_PROJEKAT_SYSCALL_CPP_HPP
+#endif // SYSCALL_CPP_HPP
